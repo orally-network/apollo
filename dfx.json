@@ -1,0 +1,26 @@
+{
+  "canisters": {
+    "apollo_backend": {
+      "candid": "src/apollo_backend/apollo_backend.did",
+      "package": "apollo_backend",
+      "type": "rust"
+    },
+    "apollo_frontend": {
+      "dependencies": [
+        "apollo_backend"
+      ],
+      "source": [
+        "src/apollo_frontend/assets"
+      ],
+      "type": "assets"
+    }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": ""
+    }
+  },
+  "output_env_file": ".env",
+  "version": 1
+}
