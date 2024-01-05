@@ -1,0 +1,2 @@
+type Metadata = record { chain_id : nat; key_name : text; tx_fee : nat };
+service : (nat, text, nat) -> { get_metadata : () -> (Metadata) query }

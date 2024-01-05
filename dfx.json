@@ -1,18 +1,14 @@
 {
   "canisters": {
-    "apollo_backend": {
-      "candid": "src/apollo_backend/apollo_backend.did",
-      "package": "apollo_backend",
+    "apollo": {
+      "candid": "src/apollo/apollo.did",
+      "package": "apollo",
       "type": "rust"
     },
-    "apollo_frontend": {
-      "dependencies": [
-        "apollo_backend"
-      ],
-      "source": [
-        "src/apollo_frontend/assets"
-      ],
-      "type": "assets"
+    "apollo_instance": {
+      "candid": "src/apollo_instance/apollo_instance.did",
+      "package": "apollo_instance",
+      "type": "rust"
     }
   },
   "defaults": {

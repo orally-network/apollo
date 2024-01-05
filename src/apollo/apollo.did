@@ -1,0 +1,25 @@
+type ApolloError = variant { ApolloInstanceError : ApolloInstanceError };
+type ApolloInstance = record { canister_id : principal; is_active : bool };
+type ApolloInstanceError = variant {
+  FailedToInstallCode : text;
+  FailedToCreate : text;
+  ChainAlreadyExists : nat;
+};
+type ApolloIntanceMetadata = record {
+  chain_id : nat;
+  key_name : text;
+  tx_fee : nat;
+};
+type Metadata = record {
+  timer_frequency : nat;
+  apollo_evm_contract : text;
+  key_name : text;
+  tx_fee : nat;
+};
+type Result = variant { Ok; Err : ApolloError };
+service : (nat, text, nat) -> {
+  add_chain : (nat) -> (Result);
+  get_chain_metadata : (nat) -> (ApolloIntanceMetadata) query;
+  get_chains : () -> (vec record { nat32; ApolloInstance }) query;
+  get_metadata : () -> (Metadata) query;
+}

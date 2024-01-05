@@ -1,4 +1,5 @@
 [workspace]
 members = [
-    "src/apollo_backend",
+    "src/apollo",
+    "src/apollo_instance",
 ]
