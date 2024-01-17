@@ -1,2 +1,19 @@
-type Metadata = record { chain_id : nat; key_name : text; tx_fee : nat };
-service : (nat, text, nat) -> { get_metadata : () -> (Metadata) query }
+type HttpHeader = record { value : text; name : text };
+type HttpResponse = record {
+  status : nat;
+  body : vec nat8;
+  headers : vec HttpHeader;
+};
+type Metadata = record {
+  chain_rpc : text;
+  chain_id : nat;
+  key_name : text;
+  tx_fee : nat;
+};
+type TransformArgs = record { context : vec nat8; response : HttpResponse };
+service : (nat, text, nat, text, nat64) -> {
+  get_metadata : () -> (Metadata) query;
+  start : () -> ();
+  stop : () -> ();
+  transform : (TransformArgs) -> (HttpResponse) query;
+}

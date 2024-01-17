@@ -9,7 +9,7 @@ use crate::memory::{Cbor, VMemory};
 use self::apollo_instance::ApolloInstance;
 
 pub mod apollo_instance;
-pub mod errors;
+pub mod candid_types;
 
 
 #[derive(Serialize, Deserialize, Default, CandidType, Clone)]

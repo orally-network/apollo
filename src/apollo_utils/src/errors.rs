@@ -17,6 +17,8 @@ pub enum ApolloInstanceError {
     FailedToInstallCode(String),
     #[error("Chain already exists: {0}")]
     ChainAlreadyExists(Nat),
+    #[error("Timer is not initialized")]
+    TimerIsNotInitialized,
 }
 
 

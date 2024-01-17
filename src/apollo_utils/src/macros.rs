@@ -1,14 +1,21 @@
 #[macro_export]
-macro_rules! clone_with_state {
+macro_rules! get_metadata {
     ($field:ident) => {{
-        $crate::STATE.with(|state| state.borrow().$field.clone())
+        crate::STATE.with(|state| state.borrow().metadata.get().0.$field.clone())
+    }};
+}
+
+#[macro_export]
+macro_rules! get_state {
+    ($field:ident) => {{
+        crate::STATE.with(|state| state.borrow().$field.clone())
     }};
 }
 
 #[macro_export]
 macro_rules! update_state {
     ($field:ident, $value:expr) => {{
-        $crate::STATE.with(|state| {
+        crate::STATE.with(|state| {
             state.borrow_mut().$field = $value;
         })
     }};
@@ -26,29 +33,6 @@ macro_rules! log {
     }};
 }
 
-#[macro_export]
-macro_rules! dig {
-    ($state:ident, $field:ident, $chain_id:ident, $key:ident) => {
-        $state
-            .$field
-            .0
-            .get($chain_id)
-            .context($crate::types::errors::PythiaError::ChainDoesNotExist)?
-            .get($key)
-    };
-}
-
-#[macro_export]
-macro_rules! dig_mut {
-    ($state:ident, $field:ident, $chain_id:ident, $key:ident) => {
-        $state
-            .$field
-            .0
-            .get_mut($chain_id)
-            .context($crate::types::errors::PythiaError::ChainDoesNotExist)?
-            .get_mut($key)
-    };
-}
 
 #[macro_export]
 macro_rules! retry_until_success {
