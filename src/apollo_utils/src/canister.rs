@@ -16,11 +16,7 @@ pub async fn get_eth_addr(
         vec![ic_cdk::id().as_slice().to_vec()]
     };
     match get_public_key(canister_id, path, name).await {
-        Ok(pubkey) => {
-            return pubkey_to_address(&pubkey);
-        }
-        Err(e) => {
-            return Err(e);
-        }
-    };
+        Ok(pubkey) => pubkey_to_address(&pubkey),
+        Err(e) => Err(e),
+    }
 }

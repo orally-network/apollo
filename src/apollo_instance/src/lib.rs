@@ -1,18 +1,7 @@
-use anyhow::{anyhow, Result};
-use apollo_utils::{
-    address,
-    canister::get_eth_addr,
-    errors::{ApolloInstanceError, Web3Error},
-    get_metadata, get_state, http, log,
-    nat::ToNativeTypes,
-    retry_until_success, update_metadata, web3,
-};
-use candid::{candid_method, CandidType, Nat, Principal};
-use ic_cdk::{
-    api::management_canister::http_request::{HttpResponse, TransformArgs},
-    query, update,
-};
-use jobs::{apollo_coordinator_polling::_execute, execute};
+use apollo_utils::log;
+use candid::{candid_method, CandidType, Nat};
+use ic_cdk::{query, update};
+use jobs::apollo_coordinator_polling::_execute;
 use memory::Cbor;
 use serde::{Deserialize, Serialize};
 use types::{Metadata, STATE};

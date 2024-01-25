@@ -37,7 +37,7 @@ pub async fn _execute() -> Result<()> {
 
     let gas_limit = apollo_coordinator_contract
         .estimate_gas(
-            &APOLLO_COORDINATOR_GET_REQUESTS_FROM_ID,
+            APOLLO_COORDINATOR_GET_REQUESTS_FROM_ID,
             params.clone(),
             from,
             options.clone(),
@@ -50,7 +50,7 @@ pub async fn _execute() -> Result<()> {
     let signed_call = w3
         .sign(
             &apollo_coordinator_contract,
-            &APOLLO_COORDINATOR_GET_REQUESTS_FROM_ID,
+            APOLLO_COORDINATOR_GET_REQUESTS_FROM_ID,
             vec![params.clone()],
             options.clone(),
             from.to_string(),
@@ -71,7 +71,7 @@ pub async fn _execute() -> Result<()> {
     let call_result = w3
         .get_call_result(
             &apollo_coordinator_contract,
-            &APOLLO_COORDINATOR_GET_REQUESTS_FROM_ID,
+            APOLLO_COORDINATOR_GET_REQUESTS_FROM_ID,
             &[params],
             tx_receipt,
         )

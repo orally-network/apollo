@@ -4,7 +4,7 @@ use ic_web3_rs::types::H160;
 
 use anyhow::{Context, Result};
 
-use crate::errors::{ApolloError, UtilsError};
+use crate::errors::UtilsError;
 
 #[inline]
 pub fn from_h160(h160: &H160) -> String {

@@ -4,7 +4,7 @@ use crate::types::apollo_instance::ApolloInstance;
 use anyhow::Result;
 use apollo_utils::errors::ApolloError;
 use candid::Nat;
-use ic_cdk::api::management_canister::http_request::{HttpResponse, TransformArgs};
+
 use types::{candid_types::AddChainRequest, Metadata, STATE};
 
 mod memory;

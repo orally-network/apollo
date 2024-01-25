@@ -56,7 +56,7 @@ macro_rules! retry_until_success {
             || format!("{:?}", result.as_ref().unwrap_err()).contains("already known"))
             && attempts < MAX_RETRIES
         {
-            crate::utils::sleep(DURATION_BETWEEN_ATTEMPTS).await;
+            $crate::utils::sleep(DURATION_BETWEEN_ATTEMPTS).await;
             result = $func.await;
             ic_utils::logger::log_message(format!("[{func_name} : {func_other}] attempt: {attempts}"));
             attempts += 1;

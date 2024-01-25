@@ -1,4 +1,4 @@
-use candid::{error, CandidType, Nat};
+use candid::{CandidType, Nat};
 use thiserror::Error;
 
 #[derive(Error, Debug, CandidType)]

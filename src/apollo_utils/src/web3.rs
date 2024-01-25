@@ -1,24 +1,17 @@
-use std::{option, str::FromStr, time::Duration};
-
-use anyhow::{Context, Result};
-
-use candid::Nat;
-
+use anyhow::Result;
 use ic_cdk::api::management_canister::http_request::{TransformContext, TransformFunc};
 use ic_web3_rs::{
     api::Eth,
-    contract::{self, Contract, Options},
+    contract::{Contract, Options},
     ethabi::Token,
     ic::KeyInfo,
     transports::{ic_http_client::CallOptionsBuilder, ICHttp},
-    types::{
-        BlockId, Bytes, CallRequest, Res, SignedTransaction, Transaction, TransactionId,
-        TransactionParameters, TransactionReceipt, H160, H256, U256,
-    },
+    types::{BlockId, Bytes, CallRequest, SignedTransaction, TransactionReceipt, H160, H256, U256},
     Transport, Web3,
 };
+use std::{str::FromStr, time::Duration};
 
-use crate::{errors::Web3Error, get_metadata, http, retry_until_success, time};
+use crate::{errors::Web3Error, http, retry_until_success, time};
 
 const ECDSA_SIGN_CYCLES: u64 = 23_000_000_000;
 pub const TRANSFER_GAS_LIMIT: u64 = 21_000;
@@ -52,6 +45,7 @@ impl<T: Transport> Web3Instance<T> {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub async fn sign(
         &self,
         contract: &Contract<T>,
@@ -151,7 +145,7 @@ impl<T: Transport> Web3Instance<T> {
             .send_raw_transaction(signed_call.raw_transaction.clone(), http::transform_ctx()))
         .map_err(|err| Web3Error::UnableToExecuteRawTx(err.to_string()))?;
 
-        Ok(self.wait_for_success_confirmation(tx_hash).await?)
+        self.wait_for_success_confirmation(tx_hash).await
     }
 
     pub async fn wait_for_success_confirmation(

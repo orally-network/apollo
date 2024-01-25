@@ -2,12 +2,9 @@ use std::collections::HashMap;
 
 use candid::{candid_method, encode_args, Nat};
 use ic_cdk::{
-    api::management_canister::{
-        http_request::{HttpResponse, TransformArgs},
-        main::{
-            create_canister, install_code, CanisterInstallMode, CreateCanisterArgument,
-            InstallCodeArgument,
-        },
+    api::management_canister::main::{
+        create_canister, install_code, CanisterInstallMode, CreateCanisterArgument,
+        InstallCodeArgument,
     },
     query, update,
 };
@@ -46,7 +43,7 @@ fn get_chains() -> HashMap<u32, ApolloInstance> {
         s.borrow()
             .chains
             .iter()
-            .map(|(k, v)| (k.clone(), v.0.clone()))
+            .map(|(k, v)| (k, v.0.clone()))
             .collect()
     })
 }
@@ -61,7 +58,7 @@ async fn add_chain(req: AddChainRequest) -> Result<(), ApolloError> {
 
     let canister_id = match create_canister(
         CreateCanisterArgument { settings: None },
-        INIT_CYCLES_BALANCE.into(),
+        INIT_CYCLES_BALANCE,
     )
     .await
     {
@@ -83,7 +80,7 @@ async fn add_chain(req: AddChainRequest) -> Result<(), ApolloError> {
 
     match install_code(InstallCodeArgument {
         mode: CanisterInstallMode::Install,
-        canister_id: canister_id.clone(),
+        canister_id,
         wasm_module: wasm.to_vec(),
         arg: encode_args(payload).unwrap(),
     })
@@ -97,7 +94,7 @@ async fn add_chain(req: AddChainRequest) -> Result<(), ApolloError> {
             STATE.with(|s| {
                 let mut state = s.borrow_mut();
                 let apollo_instance = ApolloInstance {
-                    canister_id: canister_id.clone(),
+                    canister_id,
                     is_active: true,
                 };
 

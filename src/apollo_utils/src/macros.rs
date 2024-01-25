@@ -1,3 +1,5 @@
+#![allow(clippy::crate_in_macro_def)]
+
 #[macro_export]
 macro_rules! get_metadata {
     ($field:ident) => {{
