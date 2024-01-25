@@ -26,7 +26,6 @@ macro_rules! log {
     }};
 }
 
-
 #[macro_export]
 macro_rules! retry_until_success {
     ($func:expr) => {

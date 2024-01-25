@@ -1,8 +1,8 @@
 use std::cell::RefCell;
 
 use candid::{CandidType, Nat};
-use ic_stable_structures::{StableCell, StableBTreeMap};
-use serde::{Serialize, Deserialize};
+use ic_stable_structures::{StableBTreeMap, StableCell};
+use serde::{Deserialize, Serialize};
 
 use crate::memory::{Cbor, VMemory};
 
@@ -11,7 +11,6 @@ use self::apollo_instance::ApolloInstance;
 pub mod apollo_instance;
 pub mod candid_types;
 
-
 #[derive(Serialize, Deserialize, Default, CandidType, Clone)]
 pub struct ApolloIntanceMetadata {
     pub tx_fee: Nat,
@@ -19,19 +18,17 @@ pub struct ApolloIntanceMetadata {
     pub chain_id: Nat,
 }
 
-
 #[derive(Serialize, Deserialize, Default, CandidType, Clone)]
 pub struct Metadata {
     pub tx_fee: Nat,
     pub key_name: String,
-    pub apollo_evm_contract: String, 
+    pub apollo_evm_contract: String,
     // Apollo will check the ${apollo_evm_contract} contract for new requests every ${timer_frequency} seconds
     pub timer_frequency: Nat,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct State {
-    
     #[serde(skip, default = "init_metadata")]
     pub metadata: StableCell<Cbor<Metadata>, VMemory>,
 

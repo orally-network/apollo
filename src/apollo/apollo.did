@@ -3,19 +3,17 @@ type AddChainRequest = record {
   timer_frequency : nat64;
   chain_id : nat;
 };
-type ApolloError = variant { ApolloInstanceError : ApolloInstanceError };
+type ApolloError = variant {
+  UtilsError : UtilsError;
+  ApolloInstanceError : ApolloInstanceError;
+};
 type ApolloInstance = record { canister_id : principal; is_active : bool };
 type ApolloInstanceError = variant {
   TimerIsNotInitialized;
+  UtilsError : UtilsError;
   FailedToInstallCode : text;
   FailedToCreate : text;
   ChainAlreadyExists : nat;
-};
-type HttpHeader = record { value : text; name : text };
-type HttpResponse = record {
-  status : nat;
-  body : vec nat8;
-  headers : vec HttpHeader;
 };
 type Metadata = record {
   timer_frequency : nat;
@@ -24,11 +22,10 @@ type Metadata = record {
   tx_fee : nat;
 };
 type Result = variant { Ok; Err : ApolloError };
-type TransformArgs = record { context : vec nat8; response : HttpResponse };
+type UtilsError = variant { InvalidAddressFormat };
 service : (nat, text, nat) -> {
   add_chain : (AddChainRequest) -> (Result);
   get_chains : () -> (vec record { nat32; ApolloInstance }) query;
   get_metadata : () -> (Metadata) query;
   test : () -> (Result);
-  transform : (TransformArgs) -> (HttpResponse) query;
 }

@@ -1,7 +1,7 @@
 use ic_cdk::{post_upgrade, pre_upgrade};
 use ic_stable_structures::{writer::Writer, Memory};
 
-use crate::{STATE, memory, utils::set_custom_panic_hook};
+use crate::{memory, utils::set_custom_panic_hook, STATE};
 
 // A pre-upgrade hook for serializing the data stored on the heap.
 #[pre_upgrade]
@@ -9,7 +9,8 @@ fn pre_upgrade() {
     // Serialize the state.
     // This example is using CBOR, but you can use any data format you like.
     let mut state_bytes = vec![];
-    STATE.with(|s| ciborium::ser::into_writer(&*s.borrow(), &mut state_bytes))
+    STATE
+        .with(|s| ciborium::ser::into_writer(&*s.borrow(), &mut state_bytes))
         .expect("failed to encode state");
 
     // Write the length of the serialized bytes to memory, followed by the
@@ -19,7 +20,6 @@ fn pre_upgrade() {
     let mut writer = Writer::new(&mut memory, 0);
     writer.write(&len.to_le_bytes()).unwrap();
     writer.write(&state_bytes).unwrap()
-
 }
 
 // A post-upgrade hook for deserializing the data back into the heap.
@@ -39,7 +39,5 @@ fn post_upgrade() {
 
     // Deserialize and set the state.
     let state = ciborium::de::from_reader(&*state_bytes).expect("failed to decode state");
-    STATE.with(|s| {
-        *s.borrow_mut() = state
-    });
+    STATE.with(|s| *s.borrow_mut() = state);
 }

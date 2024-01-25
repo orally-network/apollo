@@ -5,12 +5,10 @@ use candid::Nat;
 //     U256::from_big_endian(&nat.0.to_bytes_be())
 // }
 
-
 pub trait ToNativeTypes {
     fn to_u64(&self) -> u64;
     fn to_u32(&self) -> u32;
 }
-
 
 impl ToNativeTypes for Nat {
     fn to_u64(&self) -> u64 {

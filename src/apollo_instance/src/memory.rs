@@ -6,28 +6,41 @@ use std::cell::RefCell;
 
 // A memory for upgrades, where data from the heap can be serialized/deserialized.
 const UPGRADES_MEMORY_ID: MemoryId = MemoryId::new(0);
-// A memory for canister metadata 
+// A memory for canister metadata
 const METADATA_MEMORY_ID: MemoryId = MemoryId::new(1);
 
 pub type VMemory = VirtualMemory<DefaultMemoryImpl>;
 
-
 /// A helper type implementing Storable for all
 /// serde-serializable types using the CBOR encoding.
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct Cbor<T>(pub T)
-where T: serde::Serialize + serde::de::DeserializeOwned;
+where
+    T: serde::Serialize + serde::de::DeserializeOwned + Clone;
 
 impl<T> std::ops::Deref for Cbor<T>
-where T: serde::Serialize + serde::de::DeserializeOwned
+where
+    T: serde::Serialize + serde::de::DeserializeOwned + Clone,
 {
-  type Target = T;
+    type Target = T;
 
-  fn deref(&self) -> &Self::Target { &self.0 }
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl<T> std::ops::DerefMut for Cbor<T>
+where
+    T: serde::Serialize + serde::de::DeserializeOwned + Clone,
+{
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
 }
 
 impl<T> Storable for Cbor<T>
-where T: serde::Serialize + serde::de::DeserializeOwned
+where
+    T: serde::Serialize + serde::de::DeserializeOwned + Clone,
 {
     const BOUND: Bound = Bound::Unbounded;
 
@@ -52,7 +65,6 @@ thread_local! {
 pub fn get_upgrades_memory() -> VMemory {
     MEMORY_MANAGER.with(|m| m.borrow().get(UPGRADES_MEMORY_ID))
 }
-
 
 pub fn get_metadata_memory() -> VMemory {
     MEMORY_MANAGER.with(|m| m.borrow().get(METADATA_MEMORY_ID))

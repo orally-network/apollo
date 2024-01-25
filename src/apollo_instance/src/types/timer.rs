@@ -5,7 +5,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::{log, STATE};
 
-
 #[derive(Clone, Debug, Default, Serialize, Deserialize, CandidType)]
 pub struct Timer {
     pub id: String,
@@ -18,18 +17,14 @@ impl Timer {
         STATE.with(|state| {
             let mut state = state.borrow_mut();
 
-            let old_timer = state
-                .timer.clone();
+            let old_timer = state.timer.clone();
 
             let new_timer = Timer {
                 id,
                 is_active: old_timer.is_active,
             };
 
-            log!(
-                "[TIMER] Timer updated, is_active = {}",
-                new_timer.is_active
-            );
+            log!("[TIMER] Timer updated, is_active = {}", new_timer.is_active);
 
             state.timer = new_timer;
 
@@ -40,8 +35,7 @@ impl Timer {
     pub fn activate() {
         STATE.with(|state| {
             let mut state = state.borrow_mut();
-            let old_timer = state
-                .timer.clone();
+            let old_timer = state.timer.clone();
 
             let new_timer = Timer {
                 id: old_timer.id,
@@ -51,7 +45,6 @@ impl Timer {
             log!("[TIMER] Timer activated");
 
             state.timer = new_timer;
-
         })
     }
 
@@ -59,19 +52,14 @@ impl Timer {
         STATE.with(|state| {
             let mut state = state.borrow_mut();
 
-            let old_timer = state
-                .timer.clone();
+            let old_timer = state.timer.clone();
 
             let new_timer = Timer {
                 id: old_timer.id,
                 is_active: false,
             };
 
-            let id = serde_json::from_str::<TimerId>(
-                &state
-                    .timer
-                    .id,
-            )?;
+            let id = serde_json::from_str::<TimerId>(&state.timer.id)?;
 
             clear_timer(id);
 
@@ -87,9 +75,7 @@ impl Timer {
         STATE.with(|state| {
             let state = state.borrow();
 
-            state
-                .timer
-                .is_active
+            state.timer.is_active
         })
     }
 }

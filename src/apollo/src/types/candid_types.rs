@@ -1,9 +1,5 @@
 use candid::{CandidType, Nat};
-use serde::{Serialize, Deserialize};
-
-
-
-
+use serde::{Deserialize, Serialize};
 
 #[derive(CandidType, Serialize, Deserialize, Debug)]
 pub struct AddChainRequest {

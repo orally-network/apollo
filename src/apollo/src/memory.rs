@@ -6,7 +6,7 @@ use std::cell::RefCell;
 
 // A memory for upgrades, where data from the heap can be serialized/deserialized.
 const UPGRADES_MEMORY_ID: MemoryId = MemoryId::new(0);
-// A memory for canister metadata 
+// A memory for canister metadata
 const METADATA_MEMORY_ID: MemoryId = MemoryId::new(1);
 // A memory for the StableBTreeMap we're using. A new memory should be created for
 // every additional stable structure.
@@ -14,23 +14,27 @@ const STABLE_BTREE_MEMORY_ID: MemoryId = MemoryId::new(2);
 
 pub type VMemory = VirtualMemory<DefaultMemoryImpl>;
 
-
 /// A helper type implementing Storable for all
 /// serde-serializable types using the CBOR encoding.
 #[derive(Default)]
 pub struct Cbor<T>(pub T)
-where T: serde::Serialize + serde::de::DeserializeOwned;
+where
+    T: serde::Serialize + serde::de::DeserializeOwned;
 
 impl<T> std::ops::Deref for Cbor<T>
-where T: serde::Serialize + serde::de::DeserializeOwned
+where
+    T: serde::Serialize + serde::de::DeserializeOwned,
 {
-  type Target = T;
+    type Target = T;
 
-  fn deref(&self) -> &Self::Target { &self.0 }
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
 }
 
 impl<T> Storable for Cbor<T>
-where T: serde::Serialize + serde::de::DeserializeOwned
+where
+    T: serde::Serialize + serde::de::DeserializeOwned,
 {
     const BOUND: Bound = Bound::Unbounded;
 

@@ -2,7 +2,7 @@ use std::cell::RefCell;
 
 use candid::{CandidType, Nat};
 use ic_stable_structures::StableCell;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::memory::{Cbor, VMemory};
 
@@ -12,10 +12,12 @@ pub mod timer;
 
 #[derive(Serialize, Deserialize, Default, CandidType, Clone)]
 pub struct Metadata {
-    pub tx_fee: Nat,
+    pub apollos_fee: Nat,
     pub key_name: String,
     pub chain_id: Nat,
     pub chain_rpc: String,
+    pub apollo_coordinator: String,
+    pub apollo_evm_address: Option<String>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -25,8 +27,8 @@ pub struct State {
 
     pub last_checked_block_height: Option<u64>,
     // Frequency in seconds to check for new blocks
-    pub timer_frequency: u64, 
-    pub timer: Timer
+    pub timer_frequency: u64,
+    pub timer: Timer,
 }
 
 thread_local! {

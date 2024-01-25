@@ -6,6 +6,16 @@ macro_rules! get_metadata {
 }
 
 #[macro_export]
+macro_rules! update_metadata {
+    ($field:ident, $value:expr) => {{
+        crate::STATE.with(|state| {
+            let mut metadata = state.borrow_mut().metadata.get().clone();
+            (*metadata).$field = $value;
+        });
+    }};
+}
+
+#[macro_export]
 macro_rules! get_state {
     ($field:ident) => {{
         crate::STATE.with(|state| state.borrow().$field.clone())
@@ -32,7 +42,6 @@ macro_rules! log {
         // metrics!(set CYCLES, ic_cdk::api::canister_balance() as u128);
     }};
 }
-
 
 #[macro_export]
 macro_rules! retry_until_success {
@@ -64,7 +73,7 @@ macro_rules! retry_until_success {
             || format!("{:?}", result.as_ref().unwrap_err()).contains("already known"))
             && attempts < MAX_RETRIES
         {
-            crate::utils::sleep(DURATION_BETWEEN_ATTEMPTS).await;
+            $crate::time::sleep(DURATION_BETWEEN_ATTEMPTS).await;
             result = $func.await;
             ic_utils::logger::log_message(format!("[{func_name} : {func_other}] attempt: {attempts}"));
             attempts += 1;
