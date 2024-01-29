@@ -68,7 +68,7 @@ async fn add_chain(req: AddChainRequest) -> Result<(), ApolloError> {
         }
     };
 
-    let wasm = include_bytes!("../../../../apollo_instance.wasm").to_vec();
+    let wasm = include_bytes!("../../../../assets/apollo_instance.wasm").to_vec();
 
     let payload = (
         get_metadata!(tx_fee),

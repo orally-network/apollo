@@ -1,4 +1,5 @@
 use candid::Nat;
+use ic_web3_rs::types::U256;
 // use ic_web3_rs::types::U256;
 
 // pub fn to_u256(nat: &Nat) -> U256 {
@@ -30,11 +31,17 @@ impl ToNativeTypes for Nat {
     }
 }
 
-// pub fn from_u256(u256: &U256) -> Nat {
-//     let mut buf = Vec::with_capacity(32);
-//     for i in u256.0.iter().rev() {
-//         buf.extend(i.to_be_bytes());
-//     }
+pub trait ToNatType {
+    fn to_nat(&self) -> Nat;
+}
 
-//     Nat(num_bigint::BigUint::from_bytes_be(&buf))
-// }
+impl ToNatType for U256 {
+    fn to_nat(&self) -> Nat {
+        let mut buf = Vec::with_capacity(32);
+        for i in self.0.iter().rev() {
+            buf.extend(i.to_be_bytes());
+        }
+
+        Nat(num_bigint::BigUint::from_bytes_be(&buf))
+    }
+}

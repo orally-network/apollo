@@ -6,7 +6,7 @@ update_candid:
 
 build_apollo_instance:
 	dfx build --check apollo_instance
-	mv ./.dfx/local/canisters/apollo_instance/apollo_instance.wasm .
+	mv ./.dfx/local/canisters/apollo_instance/apollo_instance.wasm assets/apollo_instance.wasm
 
 
 local_deploy_apollo: update_candid build_apollo_instance   

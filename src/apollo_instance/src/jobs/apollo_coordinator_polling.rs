@@ -1,15 +1,17 @@
 use anyhow::Result;
 use apollo_utils::{address, errors::Web3Error, get_metadata, log, nat::ToNativeTypes, web3};
 use ic_web3_rs::{
-    contract::{Contract, Options},
+    contract::{tokens::Tokenize, Contract, Options},
     ethabi::Token,
     types::U256,
 };
 
 use crate::utils::apollo_evm_address;
 
-const APOLLO_COORDINATOR_ABI: &[u8] = include_bytes!("../../../../ApolloCoordinatorABI.json");
+const APOLLO_COORDINATOR_ABI: &[u8] =
+    include_bytes!("../../../../assets/ApolloCoordinatorABI.json");
 const APOLLO_COORDINATOR_GET_REQUESTS_FROM_ID: &str = "getRequestsFromId";
+const APOLLO_COORDINATOR_REQUEST_DATA_FEED: &str = "requestDataFeed";
 
 pub async fn _execute() -> Result<()> {
     let w3 = web3::instance(&get_metadata!(chain_rpc))?;

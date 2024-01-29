@@ -39,7 +39,7 @@ impl<T: Transport> Web3Instance<T> {
     #[inline(always)]
     pub fn key_info(key_name: String) -> KeyInfo {
         KeyInfo {
-            derivation_path: vec![vec![]],
+            derivation_path: vec![ic_cdk::id().as_slice().to_vec()],
             key_name,
             ecdsa_sign_cycles: Some(ECDSA_SIGN_CYCLES),
         }
@@ -69,6 +69,27 @@ impl<T: Transport> Web3Instance<T> {
             .map_err(|err| Web3Error::UnableToSignContractCall(err.to_string()))?;
 
         Ok(signed_call)
+    }
+
+    pub async fn estimate_gas(
+        contract: &Contract<T>,
+        func: &str,
+        params: &Vec<Token>,
+        from: &str,
+        options: &Options,
+    ) -> Result<U256, Web3Error> {
+        let estimated_gas = contract
+            .estimate_gas(
+                func,
+                params.clone(),
+                H160::from_str(from)
+                    .map_err(|err| Web3Error::InvalidAddressFormat(err.to_string()))?,
+                options.clone(),
+            )
+            .await
+            .map_err(|err| Web3Error::UnableToEstimateGas(err.to_string()))?;
+
+        Ok(estimated_gas)
     }
 
     pub async fn get_call_result(

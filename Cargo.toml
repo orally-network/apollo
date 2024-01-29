@@ -1,6 +1,2 @@
 [workspace]
-members = [
-    "src/apollo",
-    "src/apollo_instance",
-    "src/apollo_utils"
-]
+members = ["src/apollo", "src/apollo_instance", "src/apollo_utils"]

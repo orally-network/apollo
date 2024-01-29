@@ -95,6 +95,7 @@ dependencies = [
  "ic-cdk 0.11.3",
  "ic-cdk-timers",
  "ic-web3-rs",
+ "num-bigint",
  "thiserror",
  "tokio",
 ]

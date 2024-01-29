@@ -1,4 +1,4 @@
-use candid::{CandidType, Nat};
+use candid::{error, CandidType, Nat};
 use thiserror::Error;
 
 #[derive(Error, Debug, CandidType)]
@@ -25,8 +25,8 @@ pub enum ApolloInstanceError {
 
 #[derive(Error, Debug, CandidType)]
 pub enum UtilsError {
-    #[error("Invalid address format")]
-    InvalidAddressFormat,
+    #[error("Invalid address format: {0}")]
+    InvalidAddressFormat(String),
 }
 
 #[derive(Error, Debug, CandidType)]
@@ -55,4 +55,20 @@ pub enum Web3Error {
     UnableToDecodeOutput(String),
     #[error("Unable to call contract: {0}")]
     UnableToCallContract(String),
+    #[error("Unable to create contract: {0}")]
+    UnableToCreateContract(String),
+}
+
+#[derive(Error, Debug, CandidType)]
+pub enum MulticallError {
+    #[error("Invalid multicall result")]
+    InvalidMulticallResult,
+    #[error("Empty response")]
+    EmptyResponse,
+    #[error("Response is not an array, response: {0}")]
+    ResponseIsNotAnArray(String),
+    #[error("Utils error: {0}")]
+    UtilsError(#[from] UtilsError),
+    #[error("Web3 error: {0}")]
+    Web3Error(#[from] Web3Error),
 }

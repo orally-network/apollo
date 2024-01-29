@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use ic_web3_rs::types::H160;
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 
 use crate::errors::UtilsError;
 
@@ -12,8 +12,8 @@ pub fn from_h160(h160: &H160) -> String {
 }
 
 #[inline]
-pub fn to_h160(address: &str) -> Result<H160> {
-    H160::from_str(address).context(UtilsError::InvalidAddressFormat)
+pub fn to_h160(address: &str) -> Result<H160, UtilsError> {
+    H160::from_str(address).map_err(|err| UtilsError::InvalidAddressFormat(err.to_string()))
 }
 
 #[inline]
