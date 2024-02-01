@@ -23,8 +23,10 @@ pub struct Web3Instance<T: Transport> {
     w3: Web3<T>,
 }
 
-pub fn instance(rpc: &str) -> Result<Web3Instance<ICHttp>> {
-    Ok(Web3Instance::new(Web3::new(ICHttp::new(rpc, None)?)))
+pub fn instance(rpc: &str) -> Result<Web3Instance<ICHttp>, Web3Error> {
+    Ok(Web3Instance::new(Web3::new(
+        ICHttp::new(rpc, None).expect("should be able to create http transport"),
+    )))
 }
 
 impl<T: Transport> Web3Instance<T> {
@@ -43,6 +45,18 @@ impl<T: Transport> Web3Instance<T> {
             key_name,
             ecdsa_sign_cycles: Some(ECDSA_SIGN_CYCLES),
         }
+    }
+
+    pub async fn get_address_balance(&self, address: &str) -> Result<U256, Web3Error> {
+        let balance = retry_until_success!(self.eth().balance(
+            H160::from_str(address)
+                .map_err(|err| Web3Error::InvalidAddressFormat(err.to_string()))?,
+            None,
+            http::transform_ctx()
+        ))
+        .map_err(|err| Web3Error::UnableToEstimateGas(err.to_string()))?;
+
+        Ok(balance)
     }
 
     #[allow(clippy::too_many_arguments)]

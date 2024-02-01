@@ -6,8 +6,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::memory::{Cbor, VMemory};
 
-use self::timer::Timer;
+use self::{balances::Balances, timer::Timer};
 
+pub mod balances;
 pub mod timer;
 
 #[derive(Serialize, Deserialize, Default, CandidType, Clone)]
@@ -23,7 +24,10 @@ pub struct Metadata {
 #[derive(Serialize, Deserialize)]
 pub struct State {
     #[serde(skip, default = "init_metadata")]
-    pub metadata: StableCell<Cbor<Metadata>, VMemory>,
+    pub metadata: StableCell<Cbor<Metadata>, VMemory>, // TODO: move out to a separate Metadata struct
+
+    #[serde(skip)]
+    pub balances: Balances,
 
     pub last_checked_block_height: Option<u64>,
     // Frequency in seconds to check for new blocks
@@ -44,6 +48,7 @@ impl Default for State {
     fn default() -> Self {
         Self {
             metadata: init_metadata(),
+            balances: Balances::default(),
             last_checked_block_height: None,
             timer_frequency: 0,
             timer: Timer::default(),

@@ -8,12 +8,14 @@ use std::cell::RefCell;
 const UPGRADES_MEMORY_ID: MemoryId = MemoryId::new(0);
 // A memory for canister metadata
 const METADATA_MEMORY_ID: MemoryId = MemoryId::new(1);
+// A memory for balances of users
+const BALANCES_MEMORY_ID: MemoryId = MemoryId::new(2);
 
 pub type VMemory = VirtualMemory<DefaultMemoryImpl>;
 
 /// A helper type implementing Storable for all
 /// serde-serializable types using the CBOR encoding.
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Debug)]
 pub struct Cbor<T>(pub T)
 where
     T: serde::Serialize + serde::de::DeserializeOwned + Clone;
@@ -68,4 +70,8 @@ pub fn get_upgrades_memory() -> VMemory {
 
 pub fn get_metadata_memory() -> VMemory {
     MEMORY_MANAGER.with(|m| m.borrow().get(METADATA_MEMORY_ID))
+}
+
+pub fn get_balances_memory() -> VMemory {
+    MEMORY_MANAGER.with(|m| m.borrow().get(BALANCES_MEMORY_ID))
 }

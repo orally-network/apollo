@@ -18,7 +18,7 @@ pub async fn apollo_evm_address() -> Result<String> {
         return Ok(address);
     }
 
-    let addr = get_eth_addr(None, Some(vec![vec![]]), get_metadata!(key_name))
+    let addr = get_eth_addr(None, None, get_metadata!(key_name))
         .await
         .map(|addr| address::from_h160(&addr))
         .map_err(|e| anyhow!("{e}"))?;

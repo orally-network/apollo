@@ -17,7 +17,7 @@ pub fn to_h160(address: &str) -> Result<H160, UtilsError> {
 }
 
 #[inline]
-pub fn normalize(address: &str) -> Result<String> {
+pub fn normalize(address: &str) -> Result<String, UtilsError> {
     let h160 = to_h160(address)?;
     Ok(from_h160(&h160))
 }

@@ -1,3 +1,12 @@
+type ApolloInstanceError = variant {
+  TimerIsNotInitialized;
+  BalancesError : BalancesError;
+  UtilsError : UtilsError;
+  Web3Error : Web3Error;
+  FailedToInstallCode : text;
+  FailedToCreate : text;
+  ChainAlreadyExists : nat;
+};
 type ApolloInstanceInit = record {
   chain_rpc : text;
   apollo_coordinator : text;
@@ -5,6 +14,13 @@ type ApolloInstanceInit = record {
   chain_id : nat;
   key_name : text;
   apollos_fee : nat;
+};
+type BalancesError = variant {
+  NotEnoughFunds;
+  BalanceAlreadyExists;
+  UtilsError : UtilsError;
+  NonceIsTooLow;
+  BalanceDoesNotExist;
 };
 type Metadata = record {
   chain_rpc : text;
@@ -14,9 +30,27 @@ type Metadata = record {
   key_name : text;
   apollos_fee : nat;
 };
+type Result = variant { Ok : text; Err : ApolloInstanceError };
+type UtilsError = variant { InvalidAddressFormat : text };
+type Web3Error = variant {
+  UnableToEstimateGas : text;
+  TxHasFailed;
+  UnableToSignContractCall : text;
+  UnableToDecodeOutput : text;
+  UnableToCreateContract : text;
+  UnableToGetTxReceipt : text;
+  UnableToCallContract : text;
+  UnableToExecuteRawTx : text;
+  UnableToGetNonce : text;
+  UnableToGetGasPrice : text;
+  TxTimeout;
+  UnableToFormCallData : text;
+  InvalidAddressFormat : text;
+};
 service : (ApolloInstanceInit) -> {
   get_apollo_address : () -> (text);
   get_metadata : () -> (Metadata) query;
   start : () -> ();
   stop : () -> ();
+  test_balances : () -> (Result);
 }

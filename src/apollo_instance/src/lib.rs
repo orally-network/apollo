@@ -1,10 +1,16 @@
-use apollo_utils::log;
+use apollo_utils::{
+    errors::{ApolloInstanceError, BalancesError},
+    get_metadata, log, macros, web3,
+};
 use candid::{candid_method, CandidType, Nat};
 use ic_cdk::{query, update};
-use jobs::apollo_coordinator_polling::_execute;
+use jobs::{
+    apollo_coordinator_polling::{self, _execute, test},
+    execute,
+};
 use memory::Cbor;
 use serde::{Deserialize, Serialize};
-use types::{Metadata, STATE};
+use types::{balances::Balances, Metadata, STATE};
 use utils::{apollo_evm_address, set_custom_panic_hook};
 
 use crate::types::timer::Timer;
@@ -15,7 +21,8 @@ mod migrations;
 mod types;
 mod utils;
 
-#[cfg(feature = "build_canister")]
+type Result<T> = std::result::Result<T, ApolloInstanceError>;
+
 #[candid_method]
 #[query]
 fn get_metadata() -> Metadata {
@@ -25,21 +32,48 @@ fn get_metadata() -> Metadata {
 #[candid_method]
 #[update]
 async fn start() {
-    // Timer::activate();
-    // execute();
-    _execute().await.unwrap();
-}
-
-#[candid_method]
-#[update]
-async fn get_apollo_address() -> String {
-    apollo_evm_address().await.unwrap()
+    Timer::activate();
+    execute();
+    // _execute().await.unwrap();
+    // apollo_coordinator_polling::test().await.unwrap();
 }
 
 #[candid_method]
 #[update]
 fn stop() {
     Timer::deactivate().unwrap();
+}
+
+#[candid_method]
+#[update]
+async fn test_balances() -> Result<String> {
+    // Balances::create("0x89A4e2Cf7F72b6e462bbA27FEa4d40c3da1d46cd")?;
+    log!(
+        "is exists: {}",
+        Balances::is_exists("0x89A4e2Cf7F72b6e462bbA27FEa4d40c3da1d46cd")?
+    );
+    // Balances::save_nonce("0x89A4e2Cf7F72b6e462bbA27FEa4d40c3da1d46cd", &Nat::from(1))?;
+
+    Balances::add_amount(
+        "0x89A4e2Cf7F72b6e462bbA27FEa4d40c3da1d46cd",
+        &Nat::from(1234567890),
+    )?;
+
+    let user_balances = Balances::get("0x89A4e2Cf7F72b6e462bbA27FEa4d40c3da1d46cd")?;
+    Ok(format!("{:?}", user_balances))
+
+    // let w3 = web3::instance(&get_metadata!(chain_rpc))?;
+    // let balance = w3
+    //     .get_address_balance(&apollo_evm_address().await.unwrap())
+    //     .await?;
+
+    // Ok(format!("{}", balance))
+}
+
+#[candid_method]
+#[update]
+async fn get_apollo_address() -> String {
+    apollo_evm_address().await.unwrap()
 }
 
 #[derive(Clone, Debug, CandidType, Serialize, Deserialize)]

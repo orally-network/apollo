@@ -1,7 +1,10 @@
 use ic_cdk::{post_upgrade, pre_upgrade};
 use ic_stable_structures::{writer::Writer, Memory};
 
-use crate::{memory, types::STATE};
+use crate::{
+    memory,
+    types::{State, STATE},
+};
 
 // A pre-upgrade hook for serializing the data stored on the heap.
 #[pre_upgrade]
@@ -37,6 +40,7 @@ fn post_upgrade() {
     memory.read(4, &mut state_bytes);
 
     // Deserialize and set the state.
-    let state = ciborium::de::from_reader(&*state_bytes).expect("failed to decode state");
+    let state: State = ciborium::de::from_reader(&*state_bytes).expect("failed to decode state");
+
     STATE.with(|s| *s.borrow_mut() = state);
 }

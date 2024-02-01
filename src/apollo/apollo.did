@@ -10,10 +10,19 @@ type ApolloError = variant {
 type ApolloInstance = record { canister_id : principal; is_active : bool };
 type ApolloInstanceError = variant {
   TimerIsNotInitialized;
+  BalancesError : BalancesError;
   UtilsError : UtilsError;
+  Web3Error : Web3Error;
   FailedToInstallCode : text;
   FailedToCreate : text;
   ChainAlreadyExists : nat;
+};
+type BalancesError = variant {
+  NotEnoughFunds;
+  BalanceAlreadyExists;
+  UtilsError : UtilsError;
+  NonceIsTooLow;
+  BalanceDoesNotExist;
 };
 type Metadata = record {
   timer_frequency : nat;
@@ -22,7 +31,22 @@ type Metadata = record {
   tx_fee : nat;
 };
 type Result = variant { Ok; Err : ApolloError };
-type UtilsError = variant { InvalidAddressFormat };
+type UtilsError = variant { InvalidAddressFormat : text };
+type Web3Error = variant {
+  UnableToEstimateGas : text;
+  TxHasFailed;
+  UnableToSignContractCall : text;
+  UnableToDecodeOutput : text;
+  UnableToCreateContract : text;
+  UnableToGetTxReceipt : text;
+  UnableToCallContract : text;
+  UnableToExecuteRawTx : text;
+  UnableToGetNonce : text;
+  UnableToGetGasPrice : text;
+  TxTimeout;
+  UnableToFormCallData : text;
+  InvalidAddressFormat : text;
+};
 service : (nat, text, nat) -> {
   add_chain : (AddChainRequest) -> (Result);
   get_chains : () -> (vec record { nat32; ApolloInstance }) query;

@@ -1,4 +1,4 @@
-use candid::{error, CandidType, Nat};
+use candid::{CandidType, Nat};
 use thiserror::Error;
 
 #[derive(Error, Debug, CandidType)]
@@ -21,9 +21,13 @@ pub enum ApolloInstanceError {
     TimerIsNotInitialized,
     #[error("Utils error: {0}")]
     UtilsError(#[from] UtilsError),
+    #[error("Balances error: {0}")]
+    BalancesError(#[from] BalancesError),
+    #[error("Web3 error: {0}")]
+    Web3Error(#[from] Web3Error),
 }
 
-#[derive(Error, Debug, CandidType)]
+#[derive(Error, Debug, CandidType, PartialEq)]
 pub enum UtilsError {
     #[error("Invalid address format: {0}")]
     InvalidAddressFormat(String),
@@ -71,4 +75,18 @@ pub enum MulticallError {
     UtilsError(#[from] UtilsError),
     #[error("Web3 error: {0}")]
     Web3Error(#[from] Web3Error),
+}
+
+#[derive(Error, Debug, CandidType, PartialEq)]
+pub enum BalancesError {
+    #[error("Balance already exists")]
+    BalanceAlreadyExists,
+    #[error("Balance does not exist")]
+    BalanceDoesNotExist,
+    #[error("Nonce is too low")]
+    NonceIsTooLow,
+    #[error("Utils error: {0}")]
+    UtilsError(#[from] UtilsError),
+    #[error("Not enough funds")]
+    NotEnoughFunds,
 }
