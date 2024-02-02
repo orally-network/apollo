@@ -4,7 +4,10 @@ use ic_cdk::{
     },
     query,
 };
-use ic_web3_rs::transports::ic_http_client::{CallOptions, CallOptionsBuilder};
+use ic_web3_rs::{
+    transforms::{processors, transform::TransformProcessor},
+    transports::ic_http_client::{CallOptions, CallOptionsBuilder},
+};
 
 #[query]
 fn transform(response: TransformArgs) -> HttpResponse {
@@ -15,8 +18,26 @@ fn transform(response: TransformArgs) -> HttpResponse {
     }
 }
 
+#[query]
+fn transform_tx_with_logs(args: TransformArgs) -> HttpResponse {
+    crate::processors::raw_tx_execution_transform_processor().transform(args)
+}
+
+#[query]
+fn transform_tx(args: TransformArgs) -> HttpResponse {
+    processors::send_transaction_processor().transform(args)
+}
+
 pub fn transform_ctx() -> CallOptions {
     get_transform_ctx("transform")
+}
+
+pub fn transform_ctx_tx_with_logs() -> CallOptions {
+    get_transform_ctx("transform_tx_with_logs")
+}
+
+pub fn transform_ctx_tx() -> CallOptions {
+    get_transform_ctx("transform_tx")
 }
 
 fn get_transform_ctx(method: &str) -> CallOptions {

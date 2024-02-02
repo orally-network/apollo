@@ -7,13 +7,17 @@ use ic_web3_rs::{
     ic::KeyInfo,
     transports::{ic_http_client::CallOptionsBuilder, ICHttp},
     types::{
-        BlockId, Bytes, CallRequest, SignedTransaction, TransactionReceipt, H160, H256, U256, U64,
+        BlockId, Bytes, CallRequest, SignedTransaction, Transaction, TransactionId,
+        TransactionReceipt, H160, H256, U256, U64,
     },
     Transport, Web3,
 };
 use std::{str::FromStr, time::Duration};
 
-use crate::{errors::Web3Error, http, retry_until_success, time};
+use crate::{
+    errors::{UtilsError, Web3Error},
+    http, retry_until_success, time,
+};
 
 const ECDSA_SIGN_CYCLES: u64 = 23_000_000_000;
 pub const TRANSFER_GAS_LIMIT: u64 = 21_000;
@@ -59,6 +63,34 @@ impl<T: Transport> Web3Instance<T> {
         .map_err(|err| Web3Error::UnableToEstimateGas(err.to_string()))?;
 
         Ok(balance)
+    }
+
+    pub async fn get_tx(&self, tx_hash: &str) -> Result<Transaction, Web3Error> {
+        let tx_hash =
+            H256::from_str(tx_hash).map_err(|err| UtilsError::FromHexError(err.to_string()))?;
+
+        let tx_receipt = retry_until_success!(self
+            .eth()
+            .transaction_receipt(tx_hash, http::transform_ctx_tx_with_logs()))
+        .map_err(|err| Web3Error::UnableToGetTxReceipt(err.to_string()))?
+        .ok_or(Web3Error::TxNotFound)?;
+
+        match tx_receipt.status {
+            Some(status) => {
+                if status.as_u64() != 1 {
+                    return Err(Web3Error::TxHasFailed);
+                }
+            }
+            None => return Err(Web3Error::TxNotFound),
+        }
+
+        let result = retry_until_success!(self
+            .eth()
+            .transaction(TransactionId::from(tx_hash), http::transform_ctx_tx()))
+        .map_err(|err| Web3Error::UnableToGetTxReceipt(err.to_string()))?
+        .ok_or(Web3Error::TxNotFound)?;
+
+        Ok(result)
     }
 
     #[allow(clippy::too_many_arguments)]

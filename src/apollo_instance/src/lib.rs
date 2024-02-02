@@ -1,6 +1,9 @@
 use apollo_utils::{
-    errors::{ApolloInstanceError, BalancesError},
-    get_metadata, log, macros, web3,
+    address,
+    errors::{ApolloInstanceError, BalancesError, Web3Error},
+    get_metadata, log, macros,
+    nat::ToNatType,
+    web3,
 };
 use candid::{candid_method, CandidType, Nat, Principal};
 use ic_cdk::{query, update};
@@ -41,30 +44,42 @@ fn stop() {
     Timer::deactivate().unwrap();
 }
 
+/// Deposit amount to the AMA
+///
+/// # Arguments
+///
+/// * `chain_id` - Unique identifier of the chain, for example Ethereum Mainnet is 1
+/// * `msg` - SIWE message, For more information, refer to the [SIWE message specification](https://eips.ethereum.org/EIPS/eip-4361)
+/// * `sig` - SIWE signature, For more information, refer to the [SIWE message specification](https://eips.ethereum.org/EIPS/eip-4361)
+///
+/// # Returns
+///
+/// Returns a result that can contain an error message
 #[candid_method]
 #[update]
-async fn test_balances() -> Result<String> {
-    // Balances::create("0x89A4e2Cf7F72b6e462bbA27FEa4d40c3da1d46cd")?;
-    log!(
-        "is exists: {}",
-        Balances::is_exists("0x89A4e2Cf7F72b6e462bbA27FEa4d40c3da1d46cd")?
-    );
-    // Balances::save_nonce("0x89A4e2Cf7F72b6e462bbA27FEa4d40c3da1d46cd", &Nat::from(1))?;
+pub async fn deposit(tx_hash: String, msg: String, sig: String) -> Result<()> {
+    let address = apollo_utils::siwe::recover(msg, sig).await;
 
-    Balances::add_amount(
-        "0x89A4e2Cf7F72b6e462bbA27FEa4d40c3da1d46cd",
-        &Nat::from(1234567890),
-    )?;
+    let w3 = web3::instance(&get_metadata!(chain_rpc))?;
 
-    let user_balances = Balances::get("0x89A4e2Cf7F72b6e462bbA27FEa4d40c3da1d46cd")?;
-    Ok(format!("{:?}", user_balances))
+    let tx = w3.get_tx(&tx_hash).await?;
 
-    // let w3 = web3::instance(&get_metadata!(chain_rpc))?;
-    // let balance = w3
-    //     .get_address_balance(&apollo_evm_address().await.unwrap())
-    //     .await?;
+    let receiver = tx.to.ok_or(Web3Error::TxWithoutReceiver)?;
 
-    // Ok(format!("{}", balance))
+    let ama = address::to_h160(&apollo_evm_address().await?)?;
+
+    if receiver != ama {
+        return Err(ApolloInstanceError::TxWasNotSentToAMA);
+    }
+
+    Balances::save_nonce(&address, &tx.nonce.to_nat())?;
+
+    let amount = tx.value.to_nat();
+
+    Balances::add_amount(&address, &amount)?;
+
+    log!("[BALANCES] {address} deposited amount {amount}");
+    Ok(())
 }
 
 #[candid_method]

@@ -25,12 +25,18 @@ pub enum ApolloInstanceError {
     BalancesError(#[from] BalancesError),
     #[error("Web3 error: {0}")]
     Web3Error(#[from] Web3Error),
+    #[error("Tx was not sent to Apollo main address")]
+    TxWasNotSentToAMA,
 }
 
 #[derive(Error, Debug, CandidType, PartialEq)]
 pub enum UtilsError {
     #[error("Invalid address format: {0}")]
     InvalidAddressFormat(String),
+    #[error("From hex error: {0}")]
+    FromHexError(String),
+    #[error("Failed to get apollo evm address: {0}")]
+    FailedToGetApolloEvmAddress(String),
 }
 
 #[derive(Error, Debug, CandidType)]
@@ -47,12 +53,16 @@ pub enum Web3Error {
     UnableToSignContractCall(String),
     #[error("Unable to execute raw transaction: {0}")]
     UnableToExecuteRawTx(String),
-    #[error("Tx has failed")]
-    TxHasFailed,
     #[error("Unable to get tx receipt: {0}")]
     UnableToGetTxReceipt(String),
     #[error("Tx timeout")]
     TxTimeout,
+    #[error("Tx not found")]
+    TxNotFound,
+    #[error("Tx without receiver")]
+    TxWithoutReceiver,
+    #[error("Tx has failed")]
+    TxHasFailed,
     #[error("Unable to form call data: {0}")]
     UnableToFormCallData(String),
     #[error("Unable to decode output: {0}")]
@@ -61,6 +71,8 @@ pub enum Web3Error {
     UnableToCallContract(String),
     #[error("Unable to create contract: {0}")]
     UnableToCreateContract(String),
+    #[error("Utils error: {0}")]
+    UtilsError(#[from] UtilsError),
 }
 
 #[derive(Error, Debug, CandidType)]
