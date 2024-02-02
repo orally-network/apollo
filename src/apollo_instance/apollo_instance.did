@@ -13,6 +13,7 @@ type ApolloInstanceInit = record {
   timer_frequency : nat64;
   chain_id : nat;
   key_name : text;
+  block_gas_limit : nat;
   apollos_fee : nat;
 };
 type BalancesError = variant {
@@ -28,6 +29,7 @@ type Metadata = record {
   apollo_evm_address : opt text;
   chain_id : nat;
   key_name : text;
+  block_gas_limit : nat;
   apollos_fee : nat;
 };
 type Result = variant { Ok : text; Err : ApolloInstanceError };

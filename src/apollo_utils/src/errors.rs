@@ -1,4 +1,4 @@
-use candid::{CandidType, Nat};
+use candid::{error, CandidType, Nat};
 use thiserror::Error;
 
 #[derive(Error, Debug, CandidType)]
@@ -75,6 +75,10 @@ pub enum MulticallError {
     UtilsError(#[from] UtilsError),
     #[error("Web3 error: {0}")]
     Web3Error(#[from] Web3Error),
+    #[error("Contract error: {0}")]
+    ContractError(String),
+    #[error("Unable to encode call data: {0}")]
+    UnableToEncodeCallData(String),
 }
 
 #[derive(Error, Debug, CandidType, PartialEq)]

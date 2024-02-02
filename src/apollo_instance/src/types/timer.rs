@@ -1,6 +1,9 @@
+use std::time::Duration;
+
 use anyhow::Result;
+use apollo_utils::get_state;
 use candid::CandidType;
-use ic_cdk_timers::{clear_timer, TimerId};
+use ic_cdk_timers::{clear_timer, set_timer, TimerId};
 use serde::{Deserialize, Serialize};
 
 use crate::{log, STATE};
@@ -12,8 +15,8 @@ pub struct Timer {
 }
 
 impl Timer {
-    pub fn update(id: TimerId) -> Result<()> {
-        let id = serde_json::to_string(&id)?;
+    pub fn update(id: TimerId) {
+        let id = serde_json::to_string(&id).expect("Should be able to serialize TimerId");
         STATE.with(|state| {
             let mut state = state.borrow_mut();
 
@@ -27,9 +30,13 @@ impl Timer {
             log!("[TIMER] Timer updated, is_active = {}", new_timer.is_active);
 
             state.timer = new_timer;
+        });
+    }
 
-            Ok(())
-        })
+    pub fn set_timer(func: impl FnOnce() + 'static) {
+        Timer::activate();
+        let timer_id = set_timer(Duration::from_secs(get_state!(timer_frequency)), func);
+        Timer::update(timer_id);
     }
 
     pub fn activate() {

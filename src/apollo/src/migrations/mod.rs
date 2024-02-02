@@ -1,7 +1,8 @@
+use apollo_utils::update_metadata;
 use ic_cdk::{post_upgrade, pre_upgrade};
 use ic_stable_structures::{writer::Writer, Memory};
 
-use crate::{memory, utils::set_custom_panic_hook, STATE};
+use crate::{memory, types::State, utils::set_custom_panic_hook, STATE};
 
 // A pre-upgrade hook for serializing the data stored on the heap.
 #[pre_upgrade]
@@ -38,6 +39,6 @@ fn post_upgrade() {
     memory.read(4, &mut state_bytes);
 
     // Deserialize and set the state.
-    let state = ciborium::de::from_reader(&*state_bytes).expect("failed to decode state");
+    let state: State = ciborium::de::from_reader(&*state_bytes).expect("failed to decode state");
     STATE.with(|s| *s.borrow_mut() = state);
 }

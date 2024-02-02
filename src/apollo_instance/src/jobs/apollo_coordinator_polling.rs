@@ -1,15 +1,36 @@
+use core::panic;
+
 use anyhow::Result;
-use apollo_utils::{address, errors::Web3Error, get_metadata, log, nat::ToNativeTypes, web3};
+use apollo_utils::{
+    address,
+    errors::{MulticallError, Web3Error},
+    get_metadata, get_state, log,
+    multicall::{self, Call},
+    nat::{ToNatType, ToNativeTypes},
+    sybil::{self, get_sybil_input},
+    update_state,
+    web3::{self, Web3Instance},
+};
+use ic_cdk::api::call;
 use ic_web3_rs::{
-    contract::{tokens::Tokenize, Contract, Options},
+    contract::{
+        tokens::{Tokenizable, Tokenize},
+        Contract, Options,
+    },
     ethabi::Token,
-    types::U256,
+    types::{H160, U256},
+    Transport,
 };
 
-use crate::utils::apollo_evm_address;
+use crate::{
+    types::{balances::Balances, ApolloCoordinatorRequest},
+    utils::apollo_evm_address,
+};
+use ic_web3_rs::ethabi::Function;
 
 const APOLLO_COORDINATOR_ABI: &[u8] =
     include_bytes!("../../../../assets/ApolloCoordinatorABI.json");
+const TARGET_FUNCTION_ABI: &str = include_str!("../../../../assets/TargetFunctionABI.json");
 const APOLLO_COORDINATOR_GET_REQUESTS_FROM_ID: &str = "getRequestsFromId";
 const APOLLO_COORDINATOR_REQUEST_DATA_FEED: &str = "requestDataFeed";
 
@@ -35,7 +56,7 @@ pub async fn _execute() -> Result<()> {
         ..Default::default()
     };
 
-    let params: Token = Token::Uint(0.into()); // TODO: change into proper value
+    let params: Token = Token::Uint(get_state!(last_request_id).into());
 
     let gas_limit = apollo_coordinator_contract
         .estimate_gas(
@@ -75,11 +96,115 @@ pub async fn _execute() -> Result<()> {
             &apollo_coordinator_contract,
             APOLLO_COORDINATOR_GET_REQUESTS_FROM_ID,
             &[params],
-            tx_receipt,
+            tx_receipt.from,
+            tx_receipt.to,
+            tx_receipt.block_number,
         )
         .await?;
 
     log!("RESULT: {:#?}", call_result);
 
+    process_requests(&w3, call_result, gas_price).await
+}
+
+async fn process_requests<T: Transport>(
+    w3: &Web3Instance<T>,
+    requests: Vec<Token>,
+    gas_price: U256,
+) -> Result<()> {
+    if requests.is_empty() {
+        return Ok(());
+    }
+
+    let mut last_request_id = 0.into();
+
+    let mut calls = Vec::with_capacity(requests.len());
+
+    for request in requests {
+        let apollo_coordinator_request = ApolloCoordinatorRequest::from_token(request)?;
+
+        if Balances::get(&apollo_coordinator_request.requester.to_string())?.amount
+            < get_metadata!(min_balance)
+        {
+            log!(
+                "[EXECUTION] chain: {}, not enough balance for requester {}",
+                get_metadata!(chain_id),
+                apollo_coordinator_request.requester
+            );
+
+            continue;
+        }
+
+        let target_func = serde_json::from_str::<Function>(TARGET_FUNCTION_ABI)?;
+        let call_data = target_func
+            .encode_input(
+                &get_sybil_input(
+                    get_metadata!(sybil_canister_address),
+                    apollo_coordinator_request.feed_id,
+                )
+                .await?,
+            )
+            .map_err(|err| MulticallError::UnableToEncodeCallData(err.to_string()))?;
+
+        calls.push(Call {
+            target: apollo_coordinator_request.requester,
+            call_data,
+            gas_limit: apollo_coordinator_request.callback_gas_limit,
+        });
+
+        last_request_id = apollo_coordinator_request.request_id;
+    }
+
+    let results = multicall::multicall(
+        w3,
+        &get_metadata!(multicall_address),
+        apollo_evm_address().await?,
+        calls.clone(),
+        get_metadata!(key_name),
+        get_metadata!(chain_id).to_u64(),
+        get_metadata!(block_gas_limit).to_u256(),
+        &gas_price,
+    )
+    .await?;
+
+    // TODO: reimplement
+    for (result, call) in results.iter().zip(calls) {
+        log!(
+            "[EXECUTION] chain: {}, requester: {}, used gas: {}, gas limit: {}",
+            get_metadata!(chain_id),
+            call.target,
+            result.used_gas,
+            call.gas_limit
+        );
+
+        #[allow(clippy::cmp_owned)]
+        if result.used_gas == 0.into() {
+            panic!("used_gas is 0"); //TODO: check and remove
+        }
+
+        if result.used_gas > call.gas_limit {
+            panic!("used_gas is greater than gas_limit"); //TODO: check and remove
+        }
+
+        let amount = gas_price.to_nat() * result.used_gas.to_nat() + get_metadata!(apollos_fee);
+
+        Balances::reduce_amount(&call.target.to_string(), &amount).expect("should reduce balance");
+        // TODO: add fee collection
+    }
+
+    update_state!(last_request_id, last_request_id.as_u64());
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+
+    #[test]
+    fn test_target_function_abi() -> Result<()> {
+        let _ = serde_json::from_str::<Function>(TARGET_FUNCTION_ABI)?;
+
+        Ok(())
+    }
 }

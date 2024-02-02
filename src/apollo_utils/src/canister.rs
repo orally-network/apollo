@@ -5,6 +5,7 @@ use ic_web3_rs::{
 };
 
 /// get canister's eth address
+/// TODO: delete ? 
 pub async fn get_eth_addr(
     canister_id: Option<Principal>,
     derivation_path: Option<Vec<Vec<u8>>>,
@@ -15,6 +16,7 @@ pub async fn get_eth_addr(
     } else {
         vec![ic_cdk::id().as_slice().to_vec()]
     };
+
     match get_public_key(canister_id, path, name).await {
         Ok(pubkey) => pubkey_to_address(&pubkey),
         Err(e) => Err(e),

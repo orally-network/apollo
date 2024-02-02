@@ -133,13 +133,12 @@ pub async fn multicall<T: Transport>(
     w3: &Web3Instance<T>,
     multicall_address: &str,
     from: String,
-    calls: Vec<Call>,
+    mut calls: Vec<Call>,
     key_name: String,
     chain_id: u64,
-    gas_price: U256,
     block_gas_limit: U256,
+    gas_price: &U256,
 ) -> Result<Vec<MulticallResult>, MulticallError> {
-    let mut calls = calls;
     let mut result: Vec<MulticallResult> = vec![];
 
     let contract_addr = address::to_h160(multicall_address)?;
@@ -183,20 +182,41 @@ async fn execute_multicall_batch<T: Transport>(
     chain_id: u64,
     key_name: String,
 ) -> Result<Vec<Token>, MulticallError> {
-    let options = Options {
+    let mut options = Options {
         gas_price: Some(*gas_price),
-        gas: Some(
-            batch
-                .iter()
-                .fold(U256::from(BASE_GAS + GAS_FOR_OPS), |result, call| {
-                    result + call.gas_limit
-                }),
-        ),
         nonce: Some(w3.get_nonce(&from).await?),
         ..Default::default()
     };
 
     let params: Vec<Token> = batch.iter().map(|c| c.clone().into_token()).collect();
+
+    let estimated_gas =
+        Web3Instance::estimate_gas(contract, MULTICALL_CALL_FUNCTION, &params, &from, &options)
+            .await?;
+
+    options.gas = Some(estimated_gas);
+
+    // TODO: implement separate function for this
+    //
+    // let estimatet_multicall_results = w3
+    //     .get_call_result(
+    //         contract,
+    //         MULTICALL_CALL_FUNCTION,
+    //         &params,
+    //         address::to_h160(&from)?,
+    //         Some(contract.address()),
+    //         None,
+    //     )
+    //     .await?;
+
+    // let mut filtered_batch: Vec<Call>;
+    // for (result, call) in estimatet_multicall_results.iter().zip(batch) {
+    //     let result = MulticallResult::from_token(result.clone())
+    //         .map_err(|err| MulticallError::ContractError(err.to_string()))?;
+    //     if result.used_gas <= call.gas_limit && result.used_gas <=  {}
+    // }
+
+    //
 
     let signed_call = w3
         .sign(
@@ -210,6 +230,15 @@ async fn execute_multicall_batch<T: Transport>(
         )
         .await?;
 
+    for call in batch {
+        log!(
+            "[MULTICALL] chain: {}, call to: {}, gas: {}",
+            chain_id,
+            call.target,
+            call.gas_limit
+        );
+    }
+
     log!("[MULTICALL] chain: {}, tx was signed", chain_id);
 
     let tx_hash = w3.send_raw_transaction_and_wait(signed_call).await?;
@@ -217,7 +246,14 @@ async fn execute_multicall_batch<T: Transport>(
     log!("[MULTICALL] chain: {}, tx was executed", chain_id);
 
     let call_result = w3
-        .get_call_result(contract, MULTICALL_CALL_FUNCTION, &params, tx_hash)
+        .get_call_result(
+            contract,
+            MULTICALL_CALL_FUNCTION,
+            &params,
+            tx_hash.from,
+            tx_hash.to,
+            tx_hash.block_number,
+        )
         .await?;
 
     let token = call_result.first().ok_or(MulticallError::EmptyResponse)?;

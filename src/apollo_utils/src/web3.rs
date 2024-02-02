@@ -6,7 +6,9 @@ use ic_web3_rs::{
     ethabi::Token,
     ic::KeyInfo,
     transports::{ic_http_client::CallOptionsBuilder, ICHttp},
-    types::{BlockId, Bytes, CallRequest, SignedTransaction, TransactionReceipt, H160, H256, U256},
+    types::{
+        BlockId, Bytes, CallRequest, SignedTransaction, TransactionReceipt, H160, H256, U256, U64,
+    },
     Transport, Web3,
 };
 use std::{str::FromStr, time::Duration};
@@ -111,7 +113,9 @@ impl<T: Transport> Web3Instance<T> {
         contract: &Contract<T>,
         func: &str,
         params: &[Token],
-        tx_receipt: TransactionReceipt,
+        from: H160,
+        to: Option<H160>,
+        block_number: Option<U64>,
     ) -> Result<Vec<Token>, Web3Error> {
         let data = contract
             .abi()
@@ -120,21 +124,17 @@ impl<T: Transport> Web3Instance<T> {
             .map_err(|err| Web3Error::UnableToFormCallData(err.to_string()))?;
 
         let call_request = CallRequest {
-            from: Some(tx_receipt.from),
-            to: tx_receipt.to,
+            from: Some(from),
+            to,
             data: Some(Bytes::from(data)),
             ..Default::default()
         };
 
-        let block_number = BlockId::from(
-            tx_receipt
-                .block_number
-                .expect("block number should be present"),
-        );
+        let block_number = block_number.map(|block_number| BlockId::Number(block_number.into()));
 
         let raw_result = retry_until_success!(self.eth().call(
             call_request.clone(),
-            Some(block_number),
+            block_number,
             http::transform_ctx()
         ))
         .map_err(|err| Web3Error::UnableToCallContract(err.to_string()))?;

@@ -12,7 +12,8 @@ macro_rules! update_metadata {
     ($field:ident, $value:expr) => {{
         crate::STATE.with(|state| {
             let mut metadata = state.borrow_mut().metadata.get().clone();
-            (*metadata).$field = $value;
+            metadata.$field = $value;
+            state.borrow_mut().metadata.set(metadata).unwrap();
         });
     }};
 }

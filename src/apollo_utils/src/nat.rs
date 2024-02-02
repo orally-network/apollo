@@ -9,6 +9,7 @@ use ic_web3_rs::types::U256;
 pub trait ToNativeTypes {
     fn to_u64(&self) -> u64;
     fn to_u32(&self) -> u32;
+    fn to_u256(&self) -> U256;
 }
 
 impl ToNativeTypes for Nat {
@@ -28,6 +29,10 @@ impl ToNativeTypes for Nat {
             number = *nat_digits.last().expect("nat should be a number");
         }
         number
+    }
+
+    fn to_u256(&self) -> U256 {
+        U256::from_big_endian(&self.0.to_bytes_be())
     }
 }
 

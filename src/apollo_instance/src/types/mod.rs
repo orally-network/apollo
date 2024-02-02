@@ -1,7 +1,12 @@
-use std::cell::RefCell;
+use std::{cell::RefCell, str::FromStr};
 
-use candid::{CandidType, Nat};
+use candid::{CandidType, Nat, Principal};
 use ic_stable_structures::StableCell;
+use ic_web3_rs::{
+    contract::{tokens::Tokenizable, Error},
+    ethabi::Token,
+    types::{H160, U256},
+};
 use serde::{Deserialize, Serialize};
 
 use crate::memory::{Cbor, VMemory};
@@ -11,7 +16,7 @@ use self::{balances::Balances, timer::Timer};
 pub mod balances;
 pub mod timer;
 
-#[derive(Serialize, Deserialize, Default, CandidType, Clone)]
+#[derive(Serialize, Deserialize, CandidType, Clone)]
 pub struct Metadata {
     pub apollos_fee: Nat,
     pub key_name: String,
@@ -19,6 +24,31 @@ pub struct Metadata {
     pub chain_rpc: String,
     pub apollo_coordinator: String,
     pub apollo_evm_address: Option<String>,
+    pub multicall_address: String,
+    pub sybil_canister_address: Principal,
+    pub block_gas_limit: Nat,
+    pub min_balance: Nat,
+}
+
+impl Default for Metadata {
+    fn default() -> Self {
+        Self {
+            apollos_fee: Nat::from(0),
+            key_name: "".to_string(),
+            chain_id: Nat::from(0),
+            chain_rpc: "".to_string(),
+            apollo_coordinator: "".to_string(),
+            apollo_evm_address: None,
+            multicall_address: "".to_string(),
+            sybil_canister_address: Principal::from_str("").unwrap(),
+            block_gas_limit: Nat::from(0),
+            min_balance: Nat::from(0),
+        }
+    }
+}
+
+fn init_sybil_address() -> Principal {
+    Principal::from_str("bw4dl-smaaa-aaaaa-qaacq-cai").unwrap()
 }
 
 #[derive(Serialize, Deserialize)]
@@ -29,10 +59,10 @@ pub struct State {
     #[serde(skip)]
     pub balances: Balances,
 
-    pub last_checked_block_height: Option<u64>,
-    // Frequency in seconds to check for new blocks
+    // Frequency in seconds to check apollo coordinator for new requests
     pub timer_frequency: u64,
     pub timer: Timer,
+    pub last_request_id: u64,
 }
 
 thread_local! {
@@ -49,9 +79,52 @@ impl Default for State {
         Self {
             metadata: init_metadata(),
             balances: Balances::default(),
-            last_checked_block_height: None,
             timer_frequency: 0,
             timer: Timer::default(),
+            last_request_id: 0,
         }
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct ApolloCoordinatorRequest {
+    pub request_id: U256,
+    pub feed_id: String,
+    pub callback_gas_limit: U256,
+    pub requester: H160,
+}
+
+impl Tokenizable for ApolloCoordinatorRequest {
+    fn from_token(token: Token) -> Result<Self, Error>
+    where
+        Self: Sized,
+    {
+        if let Token::Tuple(tokens) = token {
+            if tokens.len() != 4 {
+                return Err(Error::InvalidOutputType("invalid tokens number".into()));
+            }
+
+            if let [Token::Uint(request_id), Token::String(feed_id), Token::Uint(callback_gas_limit), Token::Address(requester)] =
+                tokens.as_slice()
+            {
+                return Ok(Self {
+                    request_id: request_id.clone(),
+                    feed_id: feed_id.clone(),
+                    callback_gas_limit: callback_gas_limit.clone(),
+                    requester: requester.clone(),
+                });
+            }
+        }
+
+        Err(Error::InvalidOutputType("invalid tokens".into()))
+    }
+
+    fn into_token(self) -> Token {
+        Token::Tuple(vec![
+            Token::Uint(self.request_id),
+            Token::String(self.feed_id),
+            Token::Uint(self.callback_gas_limit),
+            Token::Address(self.requester),
+        ])
     }
 }
