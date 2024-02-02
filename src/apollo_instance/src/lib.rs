@@ -2,12 +2,9 @@ use apollo_utils::{
     errors::{ApolloInstanceError, BalancesError},
     get_metadata, log, macros, web3,
 };
-use candid::{candid_method, CandidType, Nat};
+use candid::{candid_method, CandidType, Nat, Principal};
 use ic_cdk::{query, update};
-use jobs::{
-    apollo_coordinator_polling::{self, _execute, test},
-    execute,
-};
+use jobs::execute;
 use memory::Cbor;
 use serde::{Deserialize, Serialize};
 use types::{balances::Balances, Metadata, STATE};
@@ -83,7 +80,11 @@ struct ApolloInstanceInit {
     chain_id: Nat,
     chain_rpc: String,
     apollo_coordinator: String,
+    multicall_address: String,
     timer_frequency: u64,
+    block_gas_limit: Nat,
+    sybil_canister_address: Principal,
+    min_balance: Nat,
 }
 
 // Used to generate metadata from ApolloInstanceInit
@@ -96,6 +97,10 @@ impl From<ApolloInstanceInit> for Metadata {
             chain_rpc: init.chain_rpc,
             apollo_coordinator: init.apollo_coordinator,
             apollo_evm_address: None,
+            multicall_address: init.multicall_address,
+            block_gas_limit: init.block_gas_limit,
+            sybil_canister_address: init.sybil_canister_address,
+            min_balance: init.min_balance,
         }
     }
 }
@@ -112,12 +117,10 @@ fn init(args: ApolloInstanceInit) {
 }
 
 // For candid file auto-generation
-#[cfg(feature = "build_canister")]
 candid::export_service!();
 
 /// Not a test, but a helper function to save the candid file
 #[cfg(test)]
-#[cfg(feature = "build_canister")]
 mod save_candid {
 
     use super::*;

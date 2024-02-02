@@ -1,9 +1,11 @@
 pub mod address;
 pub mod canister;
+pub mod encoding;
 pub mod errors;
 pub mod http;
 pub mod macros;
 pub mod multicall;
 pub mod nat;
+pub mod sybil;
 pub mod time;
 pub mod web3;

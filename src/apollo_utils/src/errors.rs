@@ -94,3 +94,11 @@ pub enum BalancesError {
     #[error("Not enough funds")]
     NotEnoughFunds,
 }
+
+#[derive(Error, Debug, CandidType, PartialEq)]
+pub enum SybilError {
+    #[error("Unsuppored Asset Data Type: {0}")]
+    UnsupportedAssetDataType(String),
+    #[error("Canister error: {0}")]
+    CanisterError(String),
+}
