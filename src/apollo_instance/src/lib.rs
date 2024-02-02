@@ -98,7 +98,7 @@ struct ApolloInstanceInit {
     multicall_address: String,
     timer_frequency: u64,
     block_gas_limit: Nat,
-    sybil_canister_address: Principal,
+    sybil_canister_address: String,
     min_balance: Nat,
 }
 

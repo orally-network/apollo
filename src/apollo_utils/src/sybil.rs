@@ -143,9 +143,12 @@ pub async fn get_asset_data(
 }
 
 pub async fn get_sybil_input(
-    sybil_canister_address: Principal,
+    sybil_canister_address: String,
     feed_id: String,
 ) -> Result<Vec<Token>, SybilError> {
+    let sybil_canister_address = Principal::from_text(sybil_canister_address)
+        .map_err(|err| SybilError::InvalidPrincipal(err.to_string()))?;
+
     log!(
         "[ABI] get_sybil_input requested sybil::get_asset_data, feed_id: {}",
         feed_id

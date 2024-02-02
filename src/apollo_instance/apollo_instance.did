@@ -6,14 +6,18 @@ type ApolloInstanceError = variant {
   FailedToInstallCode : text;
   FailedToCreate : text;
   ChainAlreadyExists : nat;
+  TxWasNotSentToAMA;
 };
 type ApolloInstanceInit = record {
+  sybil_canister_address : text;
   chain_rpc : text;
   apollo_coordinator : text;
   timer_frequency : nat64;
   chain_id : nat;
+  multicall_address : text;
   key_name : text;
   block_gas_limit : nat;
+  min_balance : nat;
   apollos_fee : nat;
 };
 type BalancesError = variant {
@@ -24,24 +28,34 @@ type BalancesError = variant {
   BalanceDoesNotExist;
 };
 type Metadata = record {
+  sybil_canister_address : text;
   chain_rpc : text;
   apollo_coordinator : text;
   apollo_evm_address : opt text;
   chain_id : nat;
+  multicall_address : text;
   key_name : text;
   block_gas_limit : nat;
+  min_balance : nat;
   apollos_fee : nat;
 };
-type Result = variant { Ok : text; Err : ApolloInstanceError };
-type UtilsError = variant { InvalidAddressFormat : text };
+type Result = variant { Ok; Err : ApolloInstanceError };
+type UtilsError = variant {
+  FromHexError : text;
+  FailedToGetApolloEvmAddress : text;
+  InvalidAddressFormat : text;
+};
 type Web3Error = variant {
   UnableToEstimateGas : text;
   TxHasFailed;
+  TxWithoutReceiver;
   UnableToSignContractCall : text;
   UnableToDecodeOutput : text;
   UnableToCreateContract : text;
   UnableToGetTxReceipt : text;
+  TxNotFound;
   UnableToCallContract : text;
+  UtilsError : UtilsError;
   UnableToExecuteRawTx : text;
   UnableToGetNonce : text;
   UnableToGetGasPrice : text;
@@ -50,9 +64,9 @@ type Web3Error = variant {
   InvalidAddressFormat : text;
 };
 service : (ApolloInstanceInit) -> {
+  deposit : (text, text, text) -> (Result);
   get_apollo_address : () -> (text);
   get_metadata : () -> (Metadata) query;
   start : () -> ();
   stop : () -> ();
-  test_balances : () -> (Result);
 }

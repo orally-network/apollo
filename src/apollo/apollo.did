@@ -16,6 +16,7 @@ type ApolloInstanceError = variant {
   FailedToInstallCode : text;
   FailedToCreate : text;
   ChainAlreadyExists : nat;
+  TxWasNotSentToAMA;
 };
 type BalancesError = variant {
   NotEnoughFunds;
@@ -31,15 +32,22 @@ type Metadata = record {
   tx_fee : nat;
 };
 type Result = variant { Ok; Err : ApolloError };
-type UtilsError = variant { InvalidAddressFormat : text };
+type UtilsError = variant {
+  FromHexError : text;
+  FailedToGetApolloEvmAddress : text;
+  InvalidAddressFormat : text;
+};
 type Web3Error = variant {
   UnableToEstimateGas : text;
   TxHasFailed;
+  TxWithoutReceiver;
   UnableToSignContractCall : text;
   UnableToDecodeOutput : text;
   UnableToCreateContract : text;
   UnableToGetTxReceipt : text;
+  TxNotFound;
   UnableToCallContract : text;
+  UtilsError : UtilsError;
   UnableToExecuteRawTx : text;
   UnableToGetNonce : text;
   UnableToGetGasPrice : text;

@@ -113,4 +113,6 @@ pub enum SybilError {
     UnsupportedAssetDataType(String),
     #[error("Canister error: {0}")]
     CanisterError(String),
+    #[error("Invalid principal: {0}")]
+    InvalidPrincipal(String),
 }

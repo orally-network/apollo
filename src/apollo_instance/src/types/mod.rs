@@ -1,6 +1,6 @@
-use std::{cell::RefCell, str::FromStr};
+use std::cell::RefCell;
 
-use candid::{CandidType, Nat, Principal};
+use candid::{CandidType, Nat};
 use ic_stable_structures::StableCell;
 use ic_web3_rs::{
     contract::{tokens::Tokenizable, Error},
@@ -25,7 +25,7 @@ pub struct Metadata {
     pub apollo_coordinator: String,
     pub apollo_evm_address: Option<String>,
     pub multicall_address: String,
-    pub sybil_canister_address: Principal,
+    pub sybil_canister_address: String, // Principal is not supported by ciborium
     pub block_gas_limit: Nat,
     pub min_balance: Nat,
 }
@@ -40,15 +40,11 @@ impl Default for Metadata {
             apollo_coordinator: "".to_string(),
             apollo_evm_address: None,
             multicall_address: "".to_string(),
-            sybil_canister_address: Principal::from_str("").unwrap(),
+            sybil_canister_address: "".to_string(),
             block_gas_limit: Nat::from(0),
             min_balance: Nat::from(0),
         }
     }
-}
-
-fn init_sybil_address() -> Principal {
-    Principal::from_str("bw4dl-smaaa-aaaaa-qaacq-cai").unwrap()
 }
 
 #[derive(Serialize, Deserialize)]

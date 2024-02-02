@@ -21,7 +21,7 @@ ifndef SYBIL_CANISTER
 endif
 
 ifndef MULTICALL_ADDRESS
-	$(eval MULTICALL_ADDRESS := "0x65309C2B0f31866a46b0FB2BcA2c3188a747B78f")
+	$(eval MULTICALL_ADDRESS := 0x65309C2B0f31866a46b0FB2BcA2c3188a747B78f)
 	$(echo MULTICALL_ADDRESS ENV is undefined, using default value: ${MULTICALL_ADDRESS} for holeski)
 endif
 
@@ -35,9 +35,9 @@ endif
 			apollo_coordinator = \"0xC1e42d86716f8b8fA616249112a21622b07319a3\"; \
 			multicall_address = \"${MULTICALL_ADDRESS}\"; \
 			timer_frequency = 30:nat64; \
-			block_gas_limit = 1000000000000:nat64; \
-			sybil_canister_address = principal \"${SYBIL_CANISTER}\"; \ 
-			min_balance = 100_000_000_000_000_000; \
+			block_gas_limit = 1000000000000:nat; \
+			sybil_canister_address = \"${SYBIL_CANISTER}\"; \
+			min_balance = 100000000000000000:nat; \
 		})" apollo_instance
 
 local_upgrade_apollo_instance: update_candid 

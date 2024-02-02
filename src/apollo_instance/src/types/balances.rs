@@ -39,12 +39,6 @@ pub struct Balances(StableBTreeMap<String, Cbor<UserBalance>, VMemory>);
 
 impl Default for Balances {
     fn default() -> Self {
-        // let balances = Cbor(HashMap::new());
-        // Self(
-        //     StableCell::init(crate::memory::get_balances_memory(), balances)
-        //         .expect("Should be able to init balances"),
-        // )
-
         Self(StableBTreeMap::init(crate::memory::get_balances_memory()))
     }
 }
