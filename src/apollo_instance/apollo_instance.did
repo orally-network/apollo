@@ -4,6 +4,7 @@ type ApolloInstanceError = variant {
   UtilsError : UtilsError;
   Web3Error : Web3Error;
   FailedToInstallCode : text;
+  ApolloCoordinatorPoolingError : text;
   FailedToCreate : text;
   ChainAlreadyExists : nat;
   TxWasNotSentToAMA;
@@ -40,6 +41,17 @@ type Metadata = record {
   apollos_fee : nat;
 };
 type Result = variant { Ok; Err : ApolloInstanceError };
+type Result_1 = variant { Ok : nat; Err : ApolloInstanceError };
+type UpdateMetadata = record {
+  sybil_canister_address : opt text;
+  chain_rpc : opt text;
+  apollo_coordinator : opt text;
+  chain_id : opt nat;
+  multicall_address : opt text;
+  block_gas_limit : opt nat;
+  min_balance : opt nat;
+  apollos_fee : opt nat;
+};
 type UtilsError = variant {
   FromHexError : text;
   FailedToGetApolloEvmAddress : text;
@@ -66,7 +78,10 @@ type Web3Error = variant {
 service : (ApolloInstanceInit) -> {
   deposit : (text, text, text) -> (Result);
   get_apollo_address : () -> (text);
+  get_balance : (text) -> (Result_1) query;
   get_metadata : () -> (Metadata) query;
   start : () -> ();
   stop : () -> ();
+  update_last_request_id : (opt nat64) -> (Result);
+  update_metadata : (UpdateMetadata) -> (Result);
 }

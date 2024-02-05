@@ -14,6 +14,7 @@ type ApolloInstanceError = variant {
   UtilsError : UtilsError;
   Web3Error : Web3Error;
   FailedToInstallCode : text;
+  ApolloCoordinatorPoolingError : text;
   FailedToCreate : text;
   ChainAlreadyExists : nat;
   TxWasNotSentToAMA;

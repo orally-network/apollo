@@ -2,7 +2,7 @@ use anyhow::Result;
 use ic_cdk::api::management_canister::http_request::{TransformContext, TransformFunc};
 use ic_web3_rs::{
     api::Eth,
-    contract::{Contract, Options},
+    contract::{tokens::Tokenizable, Contract, Options},
     ethabi::Token,
     ic::KeyInfo,
     transports::{ic_http_client::CallOptionsBuilder, ICHttp},
@@ -16,7 +16,7 @@ use std::{str::FromStr, time::Duration};
 
 use crate::{
     errors::{UtilsError, Web3Error},
-    http, retry_until_success, time,
+    http, log, retry_until_success, time,
 };
 
 const ECDSA_SIGN_CYCLES: u64 = 23_000_000_000;
@@ -94,11 +94,11 @@ impl<T: Transport> Web3Instance<T> {
     }
 
     #[allow(clippy::too_many_arguments)]
-    pub async fn sign(
+    pub async fn sign<Tk: Tokenizable + Clone>(
         &self,
         contract: &Contract<T>,
         func: &str,
-        params: Vec<Token>,
+        params: Vec<Tk>,
         options: Options,
         from: String,
         key_name: String,
@@ -119,17 +119,19 @@ impl<T: Transport> Web3Instance<T> {
         Ok(signed_call)
     }
 
-    pub async fn estimate_gas(
+    // We need to pass custom wrapper around args because ic-web3-rs doesn't parse them as
+    // vec of tokens, but as a single token
+    pub async fn estimate_gas<P: Tokenizable>(
         contract: &Contract<T>,
         func: &str,
-        params: &Vec<Token>,
+        params: P,
         from: &str,
         options: &Options,
     ) -> Result<U256, Web3Error> {
         let estimated_gas = contract
             .estimate_gas(
                 func,
-                params.clone(),
+                params,
                 H160::from_str(from)
                     .map_err(|err| Web3Error::InvalidAddressFormat(err.to_string()))?,
                 options.clone(),
@@ -149,6 +151,7 @@ impl<T: Transport> Web3Instance<T> {
         to: Option<H160>,
         block_number: Option<U64>,
     ) -> Result<Vec<Token>, Web3Error> {
+        log!("[EXECUTION] Getting call result");
         let data = contract
             .abi()
             .function(func)
@@ -164,12 +167,16 @@ impl<T: Transport> Web3Instance<T> {
 
         let block_number = block_number.map(|block_number| BlockId::Number(block_number.into()));
 
+        log!("[EXECUTION] Getting raw result");
+
         let raw_result = retry_until_success!(self.eth().call(
             call_request.clone(),
             block_number,
             http::transform_ctx()
         ))
         .map_err(|err| Web3Error::UnableToCallContract(err.to_string()))?;
+
+        log!("[EXECUTION] Converting raw result");
 
         let call_result: Vec<Token> = contract
             .abi()
@@ -224,6 +231,7 @@ impl<T: Transport> Web3Instance<T> {
         let tx_status = receipt.status.expect("tx should be confirmed").as_u64();
 
         if tx_status != TX_SUCCESS_STATUS {
+            log!("ERRONEOUS TX LOGS: {:?}", receipt.logs);
             return Err(Web3Error::TxHasFailed);
         }
 

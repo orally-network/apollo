@@ -1,16 +1,24 @@
+use std::str::FromStr;
+
 use apollo_utils::{
     address,
     errors::{ApolloInstanceError, BalancesError, Web3Error},
-    get_metadata, log, macros,
-    nat::ToNatType,
-    web3,
+    get_metadata, get_state, log, macros,
+    multicall::Call,
+    nat::{ToNatType, ToNativeTypes},
+    update_state, web3,
 };
 use candid::{candid_method, CandidType, Nat, Principal};
 use ic_cdk::{query, update};
+use ic_web3_rs::{
+    contract::{tokens::Tokenizable, Contract, Options},
+    ethabi::Token,
+    types::U256,
+};
 use jobs::execute;
 use memory::Cbor;
 use serde::{Deserialize, Serialize};
-use types::{balances::Balances, Metadata, STATE};
+use types::{balances::Balances, Metadata, UpdateMetadata, STATE};
 use utils::{apollo_evm_address, set_custom_panic_hook};
 
 use crate::types::timer::Timer;
@@ -31,8 +39,20 @@ fn get_metadata() -> Metadata {
 
 #[candid_method]
 #[update]
+fn update_metadata(update_metadata_args: UpdateMetadata) -> Result<()> {
+    STATE.with(|s| {
+        let mut state = s.borrow_mut();
+        let mut metadata = state.metadata.get().0.clone();
+        metadata.update(update_metadata_args);
+        state.metadata.set(Cbor(metadata)).unwrap();
+    });
+
+    Ok(())
+}
+
+#[candid_method]
+#[update]
 async fn start() {
-    Timer::activate();
     execute();
     // _execute().await.unwrap();
     // apollo_coordinator_polling::test().await.unwrap();
@@ -42,6 +62,43 @@ async fn start() {
 #[update]
 fn stop() {
     Timer::deactivate().unwrap();
+}
+
+/// Set's last request id from apollo coordinator.
+/// Automatically sets to max request_id from apollo coordinator if not provided.
+#[candid_method]
+#[update]
+async fn update_last_request_id(request_id: Option<u64>) -> Result<()> {
+    if let Some(request_id) = request_id {
+        update_state!(last_request_id, request_id);
+    } else {
+        // This func is automatically aborted by icp because of wait_success_confirmation func.
+        // So, we just spawn a new async task to update last_request_id in the background.
+        ic_cdk::spawn(async {
+            log!("Current request id: {}", get_state!(last_request_id));
+            if let Err(e) = jobs::apollo_coordinator_polling::update_last_request_id().await {
+                log!("Error while executing publisher job: {e:?}");
+            }
+            log!("Updated request id: {}", get_state!(last_request_id));
+        });
+    }
+
+    Ok(())
+}
+
+/// Get balance of the user
+///
+/// # Arguments
+/// * `chain_id` - Unique identifier of the chain, for example Ethereum Mainnet is 1
+/// * `address` - Address of the user, for example 0x1234567890abcdef1234567890abcdef12345678
+///
+/// # Returns
+///
+/// Returns a result with address's balance
+#[candid_method]
+#[query]
+pub fn get_balance(address: String) -> Result<Nat> {
+    Ok(Balances::get(&address).unwrap_or_default().amount)
 }
 
 /// Deposit amount to the AMA

@@ -173,10 +173,10 @@ impl Balances {
             let state = state.borrow();
             let inner = state.balances.0.borrow();
 
-            inner
+            Ok(inner
                 .get(&address)
                 .map(|user_balance| (*user_balance).clone())
-                .ok_or(BalancesError::BalanceDoesNotExist)
+                .unwrap_or_default())
         })
     }
 

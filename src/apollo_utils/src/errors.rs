@@ -27,6 +27,8 @@ pub enum ApolloInstanceError {
     Web3Error(#[from] Web3Error),
     #[error("Tx was not sent to Apollo main address")]
     TxWasNotSentToAMA,
+    #[error("Apollo coordinator pooling error: {0}")]
+    ApolloCoordinatorPoolingError(String),
 }
 
 #[derive(Error, Debug, CandidType, PartialEq)]
@@ -91,6 +93,8 @@ pub enum MulticallError {
     ContractError(String),
     #[error("Unable to encode call data: {0}")]
     UnableToEncodeCallData(String),
+    #[error("Block gas limit is too low")]
+    BlockGasLimitIsTooLow,
 }
 
 #[derive(Error, Debug, CandidType, PartialEq)]

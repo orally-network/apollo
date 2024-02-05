@@ -1,5 +1,6 @@
 use std::cell::RefCell;
 
+use apollo_utils::log;
 use candid::{CandidType, Nat};
 use ic_stable_structures::StableCell;
 use ic_web3_rs::{
@@ -16,7 +17,7 @@ use self::{balances::Balances, timer::Timer};
 pub mod balances;
 pub mod timer;
 
-#[derive(Serialize, Deserialize, CandidType, Clone)]
+#[derive(Serialize, Debug, Deserialize, CandidType, Clone)]
 pub struct Metadata {
     pub apollos_fee: Nat,
     pub key_name: String,
@@ -28,6 +29,47 @@ pub struct Metadata {
     pub sybil_canister_address: String, // Principal is not supported by ciborium
     pub block_gas_limit: Nat,
     pub min_balance: Nat,
+}
+
+#[derive(Serialize, Deserialize, CandidType, Clone)]
+pub struct UpdateMetadata {
+    pub apollos_fee: Option<Nat>,
+    pub chain_id: Option<Nat>,
+    pub chain_rpc: Option<String>,
+    pub apollo_coordinator: Option<String>,
+    pub multicall_address: Option<String>,
+    pub sybil_canister_address: Option<String>, // Principal is not supported by ciborium
+    pub block_gas_limit: Option<Nat>,
+    pub min_balance: Option<Nat>,
+}
+
+impl Metadata {
+    pub fn update(&mut self, update: UpdateMetadata) {
+        if let Some(apollos_fee) = update.apollos_fee {
+            self.apollos_fee = apollos_fee;
+        }
+        if let Some(chain_id) = update.chain_id {
+            self.chain_id = chain_id;
+        }
+        if let Some(chain_rpc) = update.chain_rpc {
+            self.chain_rpc = chain_rpc;
+        }
+        if let Some(apollo_coordinator) = update.apollo_coordinator {
+            self.apollo_coordinator = apollo_coordinator;
+        }
+        if let Some(multicall_address) = update.multicall_address {
+            self.multicall_address = multicall_address;
+        }
+        if let Some(sybil_canister_address) = update.sybil_canister_address {
+            self.sybil_canister_address = sybil_canister_address;
+        }
+        if let Some(block_gas_limit) = update.block_gas_limit {
+            self.block_gas_limit = block_gas_limit;
+        }
+        if let Some(min_balance) = update.min_balance {
+            self.min_balance = min_balance;
+        }
+    }
 }
 
 impl Default for Metadata {
@@ -99,7 +141,6 @@ impl Tokenizable for ApolloCoordinatorRequest {
             if tokens.len() != 4 {
                 return Err(Error::InvalidOutputType("invalid tokens number".into()));
             }
-
             if let [Token::Uint(request_id), Token::String(feed_id), Token::Uint(callback_gas_limit), Token::Address(requester)] =
                 tokens.as_slice()
             {

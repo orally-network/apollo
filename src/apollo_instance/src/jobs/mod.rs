@@ -11,6 +11,8 @@ pub fn execute() {
     ic_cdk::spawn(async {
         if let Err(e) = _execute().await {
             log!("Error while executing publisher job: {e:?}");
+        } else {
+            log!("Publisher job executed successfully");
         }
     });
 }

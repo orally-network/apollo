@@ -1,1 +1,121 @@
-[{"inputs":[{"components":[{"internalType":"address","name":"target","type":"address"},{"internalType":"bytes","name":"callData","type":"bytes"},{"internalType":"uint256","name":"gasLimit","type":"uint256"}],"internalType":"struct Multicall.Call[]","name":"calls","type":"tuple[]"}],"name":"multicall","outputs":[{"components":[{"internalType":"bool","name":"success","type":"bool"},{"internalType":"uint256","name":"usedGas","type":"uint256"},{"internalType":"bytes","name":"returnData","type":"bytes"}],"internalType":"struct Multicall.Result[]","name":"returnData","type":"tuple[]"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"components":[{"internalType":"address","name":"target","type":"address"},{"internalType":"uint256","name":"value","type":"uint256"}],"internalType":"struct Multicall.Transfer[]","name":"transfers","type":"tuple[]"}],"name":"multitransfer","outputs":[],"stateMutability":"payable","type":"function"}]
+[
+    {
+        "type": "constructor",
+        "inputs": [
+            {
+                "name": "_executorsRegistry",
+                "type": "address",
+                "internalType": "address"
+            }
+        ],
+        "stateMutability": "nonpayable"
+    },
+    {
+        "type": "function",
+        "name": "isExecutor",
+        "inputs": [
+            {
+                "name": "_addr",
+                "type": "address",
+                "internalType": "address"
+            }
+        ],
+        "outputs": [
+            {
+                "name": "",
+                "type": "bool",
+                "internalType": "bool"
+            }
+        ],
+        "stateMutability": "view"
+    },
+    {
+        "type": "function",
+        "name": "multicall",
+        "inputs": [
+            {
+                "name": "calls",
+                "type": "tuple[]",
+                "internalType": "struct Multicall.Call[]",
+                "components": [
+                    {
+                        "name": "target",
+                        "type": "address",
+                        "internalType": "address"
+                    },
+                    {
+                        "name": "callData",
+                        "type": "bytes",
+                        "internalType": "bytes"
+                    },
+                    {
+                        "name": "gasLimit",
+                        "type": "uint256",
+                        "internalType": "uint256"
+                    }
+                ]
+            }
+        ],
+        "outputs": [
+            {
+                "name": "",
+                "type": "tuple[]",
+                "internalType": "struct Multicall.Result[]",
+                "components": [
+                    {
+                        "name": "success",
+                        "type": "bool",
+                        "internalType": "bool"
+                    },
+                    {
+                        "name": "usedGas",
+                        "type": "uint256",
+                        "internalType": "uint256"
+                    },
+                    {
+                        "name": "returnData",
+                        "type": "bytes",
+                        "internalType": "bytes"
+                    }
+                ]
+            }
+        ],
+        "stateMutability": "nonpayable"
+    },
+    {
+        "type": "function",
+        "name": "multitransfer",
+        "inputs": [
+            {
+                "name": "transfers",
+                "type": "tuple[]",
+                "internalType": "struct Multicall.Transfer[]",
+                "components": [
+                    {
+                        "name": "target",
+                        "type": "address",
+                        "internalType": "address"
+                    },
+                    {
+                        "name": "value",
+                        "type": "uint256",
+                        "internalType": "uint256"
+                    }
+                ]
+            }
+        ],
+        "outputs": [],
+        "stateMutability": "payable"
+    },
+    {
+        "type": "error",
+        "name": "PythiaCallerUnauthorized",
+        "inputs": [
+            {
+                "name": "caller",
+                "type": "address",
+                "internalType": "address"
+            }
+        ]
+    }
+]
