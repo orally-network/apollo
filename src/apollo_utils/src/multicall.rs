@@ -17,7 +17,6 @@ const MULTICALL_CALL_FUNCTION: &str = "multicall";
 const MULTICALL_TRANSFER_FUNCTION: &str = "multitransfer";
 pub const BASE_GAS: u64 = 27_000;
 pub const GAS_PER_TRANSFER: u64 = 7_900;
-const GAS_FOR_OPS: u64 = 10_000;
 
 #[derive(Debug, Clone, Default)]
 pub struct Call {

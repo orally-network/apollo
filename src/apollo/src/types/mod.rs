@@ -1,10 +1,11 @@
 use std::cell::RefCell;
 
+use apollo_utils::memory::Cbor;
 use candid::{CandidType, Nat};
 use ic_stable_structures::{StableBTreeMap, StableCell};
 use serde::{Deserialize, Serialize};
 
-use crate::memory::{Cbor, VMemory};
+use crate::memory::VMemory;
 
 use self::apollo_instance::ApolloInstance;
 
@@ -18,13 +19,23 @@ pub struct ApolloIntanceMetadata {
     pub chain_id: Nat,
 }
 
-#[derive(Serialize, Deserialize, Default, CandidType, Clone)]
+#[derive(Serialize, Deserialize, Debug, Default, CandidType, Clone)]
 pub struct Metadata {
-    pub tx_fee: Nat,
     pub key_name: String,
-    pub apollo_evm_contract: String,
-    // Apollo will check the ${apollo_evm_contract} contract for new requests every ${timer_frequency} seconds
-    pub timer_frequency: Nat,
+    pub sybil_canister_address: String,
+}
+
+#[derive(Serialize, Deserialize, CandidType, Clone)]
+pub struct UpdateMetadata {
+    sybil_canister_address: Option<String>,
+}
+
+impl Metadata {
+    pub fn update(&mut self, update: UpdateMetadata) {
+        if let Some(sybil_canister_address) = update.sybil_canister_address {
+            self.sybil_canister_address = sybil_canister_address;
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -33,6 +44,7 @@ pub struct State {
     pub metadata: StableCell<Cbor<Metadata>, VMemory>,
 
     #[serde(skip, default = "init_chains")]
+    // TODO: change to u64
     pub chains: StableBTreeMap<u32, Cbor<ApolloInstance>, VMemory>,
 }
 

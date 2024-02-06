@@ -1,22 +1,35 @@
-type AddChainRequest = record {
+type AddApolloInstanceRequest = record {
   chain_rpc : text;
-  timer_frequency : nat64;
+  apollo_coordinator : text;
   chain_id : nat;
+  multicall_address : text;
+  block_gas_limit : nat;
+  min_balance : nat;
+  timer_frequency_sec : nat64;
+  apollos_fee : nat;
 };
 type ApolloError = variant {
   UtilsError : UtilsError;
   ApolloInstanceError : ApolloInstanceError;
+  ChainNotFound : nat;
+  CommunicationWithApolloInstanceFailed : text;
+  ChainAlreadyExists : nat;
 };
-type ApolloInstance = record { canister_id : principal; is_active : bool };
+type ApolloInstance = record {
+  canister_id : principal;
+  chain_id : nat;
+  is_active : bool;
+};
 type ApolloInstanceError = variant {
-  TimerIsNotInitialized;
+  FailedToUpgrade : text;
+  FailedToStop : text;
   BalancesError : BalancesError;
   UtilsError : UtilsError;
   Web3Error : Web3Error;
   FailedToInstallCode : text;
   ApolloCoordinatorPoolingError : text;
+  FailedToDelete : text;
   FailedToCreate : text;
-  ChainAlreadyExists : nat;
   TxWasNotSentToAMA;
 };
 type BalancesError = variant {
@@ -27,12 +40,32 @@ type BalancesError = variant {
   BalanceDoesNotExist;
 };
 type Metadata = record {
-  timer_frequency : nat;
-  apollo_evm_contract : text;
+  sybil_canister_address : text;
+  chain_rpc : text;
+  apollo_coordinator : text;
+  apollo_evm_address : opt text;
+  chain_id : nat;
+  multicall_address : text;
   key_name : text;
-  tx_fee : nat;
+  block_gas_limit : nat;
+  min_balance : nat;
+  apollos_fee : nat;
 };
+type Metadata_1 = record { sybil_canister_address : text; key_name : text };
 type Result = variant { Ok; Err : ApolloError };
+type Result_1 = variant { Ok : text; Err : ApolloError };
+type Result_2 = variant { Ok : Metadata; Err : ApolloError };
+type Result_3 = variant { Ok : nat; Err : ApolloError };
+type UpdateMetadata = record {
+  sybil_canister_address : opt text;
+  chain_rpc : opt text;
+  apollo_coordinator : opt text;
+  chain_id : opt nat;
+  multicall_address : opt text;
+  block_gas_limit : opt nat;
+  min_balance : opt nat;
+  apollos_fee : opt nat;
+};
 type UtilsError = variant {
   FromHexError : text;
   FailedToGetApolloEvmAddress : text;
@@ -56,9 +89,18 @@ type Web3Error = variant {
   UnableToFormCallData : text;
   InvalidAddressFormat : text;
 };
-service : (nat, text, nat) -> {
-  add_chain : (AddChainRequest) -> (Result);
-  get_chains : () -> (vec record { nat32; ApolloInstance }) query;
-  get_metadata : () -> (Metadata) query;
-  test : () -> (Result);
+service : (text, text) -> {
+  add_apollo_instance : (AddApolloInstanceRequest) -> (Result);
+  deposit : (nat, text, text, text) -> (Result);
+  get_ama : (nat) -> (Result_1);
+  get_apollo_instance_metadata : (nat) -> (Result_2);
+  get_apollo_instances : () -> (vec record { nat32; ApolloInstance }) query;
+  get_balance : (nat, text) -> (Result_3) query;
+  get_metadata : () -> (Metadata_1) query;
+  remove_apollo_instance : (nat) -> (Result);
+  start : (nat) -> (Result);
+  stop : (nat) -> (Result);
+  update_apollo_instance_metadata : (nat, UpdateMetadata) -> (Result);
+  update_metadata : (UpdateMetadata) -> (Result);
+  upgrade_chains : () -> (Result);
 }

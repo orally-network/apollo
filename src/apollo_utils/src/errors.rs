@@ -1,24 +1,33 @@
-use candid::{error, CandidType, Nat};
+use candid::{CandidType, Nat};
+use serde::Deserialize;
 use thiserror::Error;
 
-#[derive(Error, Debug, CandidType)]
+#[derive(Error, Debug, CandidType, Deserialize)]
 pub enum ApolloError {
+    #[error("Chain not found: {0}")]
+    ChainNotFound(Nat),
+    #[error("Chain already exists: {0}")]
+    ChainAlreadyExists(Nat),
+    #[error("Communication with Apollo instance failed: {0}")]
+    CommunicationWithApolloInstanceFailed(String),
     #[error("ApolloInstanceError: {0}")]
     ApolloInstanceError(#[from] ApolloInstanceError),
     #[error("Utils error: {0}")]
     UtilsError(#[from] UtilsError),
 }
 
-#[derive(Error, Debug, CandidType)]
+#[derive(Error, Debug, CandidType, Deserialize)]
 pub enum ApolloInstanceError {
     #[error("Failed to create: {0}")]
     FailedToCreate(String),
+    #[error("Failed to stop: {0}")]
+    FailedToStop(String),
+    #[error("Failed to delete: {0}")]
+    FailedToDelete(String),
     #[error("Failed to install code: {0}")]
     FailedToInstallCode(String),
-    #[error("Chain already exists: {0}")]
-    ChainAlreadyExists(Nat),
-    #[error("Timer is not initialized")]
-    TimerIsNotInitialized,
+    #[error("Failed to upgrade: {0}")]
+    FailedToUpgrade(String),
     #[error("Utils error: {0}")]
     UtilsError(#[from] UtilsError),
     #[error("Balances error: {0}")]
@@ -31,7 +40,7 @@ pub enum ApolloInstanceError {
     ApolloCoordinatorPoolingError(String),
 }
 
-#[derive(Error, Debug, CandidType, PartialEq)]
+#[derive(Error, Debug, CandidType, PartialEq, Deserialize)]
 pub enum UtilsError {
     #[error("Invalid address format: {0}")]
     InvalidAddressFormat(String),
@@ -41,7 +50,7 @@ pub enum UtilsError {
     FailedToGetApolloEvmAddress(String),
 }
 
-#[derive(Error, Debug, CandidType)]
+#[derive(Error, Debug, CandidType, Deserialize)]
 pub enum Web3Error {
     #[error("Unable to get gas_price: {0}")]
     UnableToGetGasPrice(String),
@@ -77,7 +86,7 @@ pub enum Web3Error {
     UtilsError(#[from] UtilsError),
 }
 
-#[derive(Error, Debug, CandidType)]
+#[derive(Error, Debug, CandidType, Deserialize)]
 pub enum MulticallError {
     #[error("Invalid multicall result")]
     InvalidMulticallResult,
@@ -97,7 +106,7 @@ pub enum MulticallError {
     BlockGasLimitIsTooLow,
 }
 
-#[derive(Error, Debug, CandidType, PartialEq)]
+#[derive(Error, Debug, CandidType, PartialEq, Deserialize)]
 pub enum BalancesError {
     #[error("Balance already exists")]
     BalanceAlreadyExists,
@@ -111,7 +120,7 @@ pub enum BalancesError {
     NotEnoughFunds,
 }
 
-#[derive(Error, Debug, CandidType, PartialEq)]
+#[derive(Error, Debug, CandidType, PartialEq, Deserialize)]
 pub enum SybilError {
     #[error("Unsuppored Asset Data Type: {0}")]
     UnsupportedAssetDataType(String),

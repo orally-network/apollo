@@ -1,4 +1,4 @@
-use crate::log;
+use apollo_utils::log;
 
 pub mod macros;
 

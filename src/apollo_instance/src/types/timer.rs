@@ -15,7 +15,7 @@ pub struct Timer {
 }
 
 impl Timer {
-    pub fn update(id: TimerId) {
+    fn update(id: TimerId) {
         let id = serde_json::to_string(&id).expect("Should be able to serialize TimerId");
         STATE.with(|state| {
             let mut state = state.borrow_mut();
@@ -35,7 +35,7 @@ impl Timer {
 
     pub fn set_timer(func: impl FnOnce() + 'static) {
         Timer::activate();
-        let timer_id = set_timer(Duration::from_secs(get_state!(timer_frequency)), func);
+        let timer_id = set_timer(Duration::from_secs(get_state!(timer_frequency_sec)), func);
         Timer::update(timer_id);
     }
 

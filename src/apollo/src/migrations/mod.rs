@@ -1,4 +1,4 @@
-use apollo_utils::update_metadata;
+use apollo_utils::log;
 use ic_cdk::{post_upgrade, pre_upgrade};
 use ic_stable_structures::{writer::Writer, Memory};
 
@@ -25,7 +25,7 @@ fn pre_upgrade() {
 
 // A post-upgrade hook for deserializing the data back into the heap.
 #[post_upgrade]
-fn post_upgrade() {
+async fn post_upgrade() {
     set_custom_panic_hook();
     let memory = memory::get_upgrades_memory();
 
@@ -41,4 +41,6 @@ fn post_upgrade() {
     // Deserialize and set the state.
     let state: State = ciborium::de::from_reader(&*state_bytes).expect("failed to decode state");
     STATE.with(|s| *s.borrow_mut() = state);
+
+    log!("Post upgrade finished")
 }

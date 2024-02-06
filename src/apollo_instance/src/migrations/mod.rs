@@ -43,4 +43,7 @@ fn post_upgrade() {
     let state: State = ciborium::de::from_reader(&*state_bytes).expect("failed to decode state");
 
     STATE.with(|s| *s.borrow_mut() = state);
+    STATE.with(|state| {
+        let mut metadata = state.borrow_mut().metadata.get().clone();
+    });
 }

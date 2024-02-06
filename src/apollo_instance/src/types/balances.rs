@@ -1,26 +1,19 @@
-use std::{
-    borrow::{Borrow, BorrowMut},
-    cell::RefCell,
-    collections::{HashMap, HashSet},
-    rc::Rc,
-};
+use std::borrow::{Borrow, BorrowMut};
 
 use apollo_utils::{
     address,
     errors::BalancesError,
     get_metadata, log,
+    memory::Cbor,
     multicall::{BASE_GAS, GAS_PER_TRANSFER},
 };
 use candid::{CandidType, Nat};
 
-use anyhow::{anyhow, Context, Result};
-use ic_stable_structures::{memory_manager::VirtualMemory, StableBTreeMap, StableCell};
+use anyhow::Result;
+use ic_stable_structures::StableBTreeMap;
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    memory::{Cbor, VMemory},
-    types::balances,
-};
+use crate::memory::VMemory;
 
 use super::STATE;
 
