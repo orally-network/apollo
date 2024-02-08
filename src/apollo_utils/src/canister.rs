@@ -35,7 +35,6 @@ fn validate_caller() {
 pub async fn get_canistergeek_information(
     request: ic_utils::api_type::GetInformationRequest,
 ) -> ic_utils::api_type::GetInformationResponse<'static> {
-    validate_caller();
     ic_utils::get_information(request)
 }
 
