@@ -11,9 +11,12 @@ build_apollo_instance:
 
 
 local_deploy_apollo: update_candid build_apollo_instance   
+ifndef SYBIL_CANISTER
+	$(error SYBIL_CANISTER ENV is undefined)
+endif
 	dfx canister create apollo && dfx build apollo && gzip -f -1 ./.dfx/local/canisters/apollo/apollo.wasm
 	dfx canister install --wasm ./.dfx/local/canisters/apollo/apollo.wasm.gz --argument \
-		"(\"dfx_test_key\")" apollo
+		"(\"${SYBIL_CANISTER}\", \"dfx_test_key\")" apollo
 
 local_deploy_apollo_instance: update_candid 
 ifndef SYBIL_CANISTER
@@ -30,8 +33,8 @@ endif
 		"(record {\
 				apollos_fee = 0:nat; \
 				key_name = \"dfx_test_key\"; \
-				chain_id = 17000:nat; \
-				chain_rpc = \"https://ethereum-sepolia.publicnode.com\"; \
+				chain_id = 167008:nat; \
+				chain_rpc = \"https://taiko-katla.blockpi.network/v1/rpc/public\"; \
 				apollo_coordinator = \"0xC1e42d86716f8b8fA616249112a21622b07319a3\"; \
 				multicall_address = \"${MULTICALL_ADDRESS}\"; \
 				timer_frequency_sec = 10:nat64; \
@@ -65,11 +68,13 @@ ic_upgrade_apollo: build_apollo_instance update_candid
 	dfx canister call apollo upgrade_chains --ic 
 
 ic_deploy_apollo: build_apollo_instance update_candid 
-	# dfx canister create apollo && 
-	
+ifndef SYBIL_CANISTER
+	$(error SYBIL_CANISTER ENV is undefined)
+endif
+	dfx canister create apollo
 	dfx build apollo && gzip -f -1 ./.dfx/local/canisters/apollo/apollo.wasm
 	dfx canister install --wasm ./.dfx/local/canisters/apollo/apollo.wasm.gz --argument \
-		"(\"key_1\")" apollo --ic
+		"(\"${SYBIL_CANISTER}\", \"key_1\")" apollo --ic
 
 
 
@@ -79,12 +84,21 @@ ifndef MULTICALL_ADDRESS
 	$(echo MULTICALL_ADDRESS ENV is undefined, using default value: ${MULTICALL_ADDRESS} for holeski)
 endif
 
+ifndef CHAIN_RPC
+	$(error CHAIN_RPC ENV is undefined)
+endif
+
+ifndef APOLLO_COORDINATOR
+	$(error APOLLO_COORDINATOR ENV is undefined)
+endif
+
+
 	dfx canister call apollo add_apollo_instance \
 		"(record {\
 			apollos_fee = 0:nat; \
 			chain_id = 11155111:nat; \
-			chain_rpc = \"https://ethereum-sepolia.publicnode.com\"; \
-			apollo_coordinator = \"0xC1e42d86716f8b8fA616249112a21622b07319a3\"; \
+			chain_rpc = \"${CHAIN_RPC}\"; \
+			apollo_coordinator = \"${APOLLO_COORDINATOR}\"; \
 			multicall_address = \"${MULTICALL_ADDRESS}\"; \
 			timer_frequency_sec = 10:nat64; \
 			block_gas_limit = 1_000_000_000_000:nat; \

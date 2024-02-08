@@ -1,4 +1,4 @@
-use apollo_utils::{errors::ApolloError, memory::Cbor, retry_until_success};
+use apollo_utils::{errors::ApolloError, log, memory::Cbor, retry_until_success};
 use candid::{candid_method, Nat};
 use ic_cdk::update;
 
@@ -15,6 +15,7 @@ async fn start(chain_id: Nat) -> Result<()> {
     retry_until_success!(ic_cdk::call(apollo_instance.canister_id, "start", ()))
         .map_err(|(_, msg)| ApolloError::CommunicationWithApolloInstanceFailed(msg))?;
 
+    log!("Apollo instance started: {}", chain_id);
     Ok(())
 }
 
@@ -29,5 +30,6 @@ async fn stop(chain_id: Nat) -> Result<()> {
     retry_until_success!(ic_cdk::call(apollo_instance.canister_id, "stop", ()))
         .map_err(|(_, msg)| ApolloError::CommunicationWithApolloInstanceFailed(msg))?;
 
+    log!("Apollo instance stopped: {}", chain_id);
     Ok(())
 }

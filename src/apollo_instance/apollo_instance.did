@@ -2,6 +2,7 @@ type ApolloInstanceError = variant {
   FailedToUpgrade : text;
   FailedToStop : text;
   BalancesError : BalancesError;
+  FailedToUpdateSettings : text;
   UtilsError : UtilsError;
   Web3Error : Web3Error;
   FailedToInstallCode : text;
@@ -86,4 +87,5 @@ service : (ApolloInstanceInit) -> {
   stop : () -> ();
   update_last_request_id : (opt nat64) -> (Result);
   update_metadata : (UpdateMetadata) -> (Result);
+  update_timer_frequency_sec : (nat64) -> (Result);
 }

@@ -10,6 +10,8 @@ pub enum ApolloError {
     ChainAlreadyExists(Nat),
     #[error("Communication with Apollo instance failed: {0}")]
     CommunicationWithApolloInstanceFailed(String),
+    #[error("Failed to get canister status: {0}")]
+    FailedToGetCanisterStatus(String),
     #[error("ApolloInstanceError: {0}")]
     ApolloInstanceError(#[from] ApolloInstanceError),
     #[error("Utils error: {0}")]
@@ -18,6 +20,8 @@ pub enum ApolloError {
 
 #[derive(Error, Debug, CandidType, Deserialize)]
 pub enum ApolloInstanceError {
+    #[error("Failed to update settings: {0}")]
+    FailedToUpdateSettings(String),
     #[error("Failed to create: {0}")]
     FailedToCreate(String),
     #[error("Failed to stop: {0}")]

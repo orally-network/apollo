@@ -27,7 +27,7 @@ pub struct State {
     // Frequency in seconds to check apollo coordinator for new requests
     pub timer_frequency_sec: u64,
     pub timer: Timer,
-    pub last_request_id: u64,
+    pub last_request_id: Option<u64>,
 }
 
 thread_local! {
@@ -46,7 +46,7 @@ impl Default for State {
             balances: Balances::default(),
             timer_frequency_sec: 0,
             timer: Timer::default(),
-            last_request_id: 0,
+            last_request_id: None,
         }
     }
 }

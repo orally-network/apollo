@@ -10,6 +10,7 @@ type AddApolloInstanceRequest = record {
 };
 type ApolloError = variant {
   UtilsError : UtilsError;
+  FailedToGetCanisterStatus : text;
   ApolloInstanceError : ApolloInstanceError;
   ChainNotFound : nat;
   CommunicationWithApolloInstanceFailed : text;
@@ -24,6 +25,7 @@ type ApolloInstanceError = variant {
   FailedToUpgrade : text;
   FailedToStop : text;
   BalancesError : BalancesError;
+  FailedToUpdateSettings : text;
   UtilsError : UtilsError;
   Web3Error : Web3Error;
   FailedToInstallCode : text;
@@ -91,6 +93,7 @@ type Web3Error = variant {
 };
 service : (text, text) -> {
   add_apollo_instance : (AddApolloInstanceRequest) -> (Result);
+  add_apollo_instances_manually : (vec ApolloInstance) -> (Result);
   deposit : (nat, text, text, text) -> (Result);
   get_ama : (nat) -> (Result_1);
   get_apollo_instance_metadata : (nat) -> (Result_2);

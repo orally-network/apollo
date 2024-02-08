@@ -5,7 +5,6 @@ use crate::{jobs::apollo_coordinator_polling::_execute, types::timer::Timer};
 pub mod apollo_coordinator_polling;
 
 pub fn execute() {
-    Timer::set_timer(execute);
     log!("---Execution started---");
 
     ic_cdk::spawn(async {
@@ -14,5 +13,9 @@ pub fn execute() {
         } else {
             log!("Publisher job executed successfully");
         }
+
+        // if Timer::is_active() {
+        //     Timer::set_timer(execute);
+        // }
     });
 }

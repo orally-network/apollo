@@ -1,4 +1,5 @@
 use core::panic;
+use std::str::FromStr;
 
 use anyhow::{anyhow, Result};
 use apollo_utils::{
@@ -31,16 +32,15 @@ const APOLLO_COORDINATOR_ABI: &[u8] =
     include_bytes!("../../../../assets/ApolloCoordinatorABI.json");
 const TARGET_FUNCTION_ABI: &str = include_str!("../../../../assets/TargetFunctionABI.json");
 const APOLLO_COORDINATOR_GET_REQUESTS_FROM_ID: &str = "getRequestsFromId";
-const APOLLO_COORDINATOR_REQUEST_DATA_FEED: &str = "requestDataFeed";
 
 async fn get_requests<T: Transport>(
     w3: &Web3Instance<T>,
     apollo_coordinator_contract: Contract<T>,
-    from: H160,
+    from: String,
     gas_price: U256,
 ) -> Result<Vec<Token>> {
     log!(
-        "[EXECUTION] chain: {}, gas price: {}",
+        "[EXECUTION] get_requests: chain: {}, gas price: {}",
         get_metadata!(chain_id),
         gas_price,
     );
@@ -51,18 +51,37 @@ async fn get_requests<T: Transport>(
         ..Default::default()
     };
 
-    let request_from_id = get_state!(last_request_id) + 1;
+    let request_from_id = if let Some(last_request_id) = get_state!(last_request_id) {
+        last_request_id + 1
+    } else {
+        0
+    };
+
     let params: Token = Token::Uint(request_from_id.into());
 
-    let gas_limit = apollo_coordinator_contract
-        .estimate_gas(
-            APOLLO_COORDINATOR_GET_REQUESTS_FROM_ID,
-            params.clone(),
-            from,
-            options.clone(),
-        )
-        .await
-        .map_err(|err| Web3Error::UnableToEstimateGas(err.to_string()))?;
+    log!(
+        "[EXECUTION] get_requests: chain: {}, estimating gas",
+        get_metadata!(chain_id)
+    );
+
+    log!("PARAMS: {:?}", params.clone());
+    log!("FROM: {:?}", from.clone());
+
+    let gas_limit = Web3Instance::estimate_gas(
+        &apollo_coordinator_contract,
+        APOLLO_COORDINATOR_GET_REQUESTS_FROM_ID,
+        params.clone(),
+        &from,
+        &options,
+    )
+    .await
+    .map_err(|err| Web3Error::UnableToEstimateGas(err.to_string()))?;
+
+    log!(
+        "[EXECUTION] get_requests: chain: {}, estimated_gas & limit: {}",
+        get_metadata!(chain_id),
+        gas_limit
+    );
 
     options.gas = Some(gas_limit);
 
@@ -72,18 +91,29 @@ async fn get_requests<T: Transport>(
             APOLLO_COORDINATOR_GET_REQUESTS_FROM_ID,
             vec![params.clone()],
             options.clone(),
-            from.to_string(),
+            from.clone(),
             get_metadata!(key_name),
             get_metadata!(chain_id).to_u64(),
         )
         .await?;
 
-    log!("[EXECUTION] chain: {}, sending tx", get_metadata!(chain_id));
+    // TODO: Delete
+    // without balance check rpc returns insufficient balance error (or not)
+    log!(
+        "BALANCE {}: {:?}",
+        from,
+        w3.get_address_balance(&from).await?
+    );
+
+    log!(
+        "[EXECUTION] get_requests: chain: {}, sending tx",
+        get_metadata!(chain_id)
+    );
 
     let tx_receipt = w3.send_raw_transaction_and_wait(signed_call).await?;
 
     log!(
-        "[EXECUTION] chain: {}, tx was executed",
+        "[EXECUTION] get_requests: chain: {}, tx was executed",
         get_metadata!(chain_id)
     );
 
@@ -105,7 +135,7 @@ async fn get_requests<T: Transport>(
         .into_array()
         .ok_or(anyhow!("Return type is not an array"))?;
 
-    log!("[EXECUTION] Returning requests");
+    log!("[EXECUTION] get_requests: Returning requests");
 
     Ok(requests)
 }
@@ -115,7 +145,7 @@ pub async fn update_last_request_id() -> Result<()> {
     let apollo_coordinator_address = address::to_h160(&get_metadata!(apollo_coordinator))?;
     let apollo_coordinator_contract =
         Contract::from_json(w3.eth(), apollo_coordinator_address, APOLLO_COORDINATOR_ABI)?;
-    let from = address::to_h160(&apollo_evm_address().await?)?;
+    let from = apollo_evm_address().await?;
 
     // multiply the gas_price to 1.2 to avoid long transaction confirmation
     let gas_price: U256 = (w3.get_gas_price().await? / 10) * 12;
@@ -129,7 +159,7 @@ pub async fn update_last_request_id() -> Result<()> {
 
     let last_request = ApolloCoordinatorRequest::from_token(call_result)?;
 
-    update_state!(last_request_id, last_request.request_id.as_u64());
+    update_state!(last_request_id, Some(last_request.request_id.as_u64()));
 
     Ok(())
 }
@@ -139,7 +169,7 @@ pub async fn _execute() -> Result<()> {
     let apollo_coordinator_address = address::to_h160(&get_metadata!(apollo_coordinator))?;
     let apollo_coordinator_contract =
         Contract::from_json(w3.eth(), apollo_coordinator_address, APOLLO_COORDINATOR_ABI)?;
-    let from = address::to_h160(&apollo_evm_address().await?)?;
+    let from = apollo_evm_address().await?;
 
     // multiply the gas_price to 1.2 to avoid long transaction confirmation
     let gas_price: U256 = (w3.get_gas_price().await? / 10) * 12;
@@ -238,7 +268,7 @@ async fn process_requests<T: Transport>(
         // TODO: add fee collection
     }
 
-    update_state!(last_request_id, last_request_id.as_u64());
+    update_state!(last_request_id, Some(last_request_id.as_u64()));
     Ok(())
 }
 

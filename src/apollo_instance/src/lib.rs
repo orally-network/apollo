@@ -1,7 +1,6 @@
 use apollo_utils::memory::Cbor;
 use apollo_utils::{apollo_instance::ApolloInstanceInit, errors::ApolloInstanceError, log};
 use candid::Nat;
-use methods::execution::start;
 use types::STATE;
 use utils::set_custom_panic_hook;
 
@@ -21,8 +20,6 @@ fn init(args: ApolloInstanceInit) {
         state.timer_frequency_sec = args.timer_frequency_sec;
         state.metadata.set(Cbor(args.into())).unwrap();
     });
-
-    start();
 }
 
 // For candid file auto-generation

@@ -121,23 +121,20 @@ impl<T: Transport> Web3Instance<T> {
 
     // We need to pass custom wrapper around args because ic-web3-rs doesn't parse them as
     // vec of tokens, but as a single token
-    pub async fn estimate_gas<P: Tokenizable>(
+    pub async fn estimate_gas<P: Tokenizable + Clone>(
         contract: &Contract<T>,
         func: &str,
         params: P,
         from: &str,
         options: &Options,
     ) -> Result<U256, Web3Error> {
-        let estimated_gas = contract
-            .estimate_gas(
-                func,
-                params,
-                H160::from_str(from)
-                    .map_err(|err| Web3Error::InvalidAddressFormat(err.to_string()))?,
-                options.clone(),
-            )
-            .await
-            .map_err(|err| Web3Error::UnableToEstimateGas(err.to_string()))?;
+        let estimated_gas = retry_until_success!(contract.estimate_gas(
+            func,
+            params.clone(),
+            H160::from_str(from).map_err(|err| Web3Error::InvalidAddressFormat(err.to_string()))?,
+            options.clone(),
+        ))
+        .map_err(|err| Web3Error::UnableToEstimateGas(err.to_string()))?;
 
         Ok(estimated_gas)
     }

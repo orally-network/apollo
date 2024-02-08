@@ -11,10 +11,11 @@ use apollo_utils::memory::Cbor;
 use apollo_utils::nat::ToNativeTypes;
 use candid::{candid_method, encode_args, Nat};
 use ic_cdk::api::management_canister::main::{
-    create_canister, delete_canister, install_code, stop_canister, CanisterInstallMode,
-    CreateCanisterArgument, InstallCodeArgument,
+    canister_status, create_canister, delete_canister, install_code, stop_canister,
+    update_settings, CanisterInstallMode, CreateCanisterArgument, InstallCodeArgument,
+    UpdateSettingsArgument,
 };
-use ic_cdk::api::management_canister::provisional::CanisterIdRecord;
+use ic_cdk::api::management_canister::provisional::{CanisterIdRecord, CanisterSettings};
 use ic_cdk::{query, update};
 
 use crate::{AddApolloInstanceRequest, Result};
@@ -48,6 +49,22 @@ fn get_apollo_instances() -> HashMap<u32, ApolloInstance> {
             .map(|(k, v)| (k, v.0.clone()))
             .collect()
     })
+}
+
+#[candid_method]
+#[update]
+fn add_apollo_instances_manually(apollo_instances: Vec<ApolloInstance>) -> Result<()> {
+    log!("ADDING APOLLO INSTANCES MANUALLY");
+    STATE.with(|s| {
+        let mut state = s.borrow_mut();
+        for apollo_instance in apollo_instances {
+            state
+                .chains
+                .insert(apollo_instance.chain_id.to_u32(), Cbor(apollo_instance));
+        }
+    });
+
+    Ok(())
 }
 
 #[candid_method]
@@ -109,7 +126,7 @@ async fn add_apollo_instance(req: AddApolloInstanceRequest) -> Result<()> {
                 let mut state = s.borrow_mut();
                 let apollo_instance = ApolloInstance {
                     canister_id,
-                    is_active: true,
+                    is_active: false,
                     chain_id: chain_id.clone(),
                 };
 
@@ -124,6 +141,30 @@ async fn add_apollo_instance(req: AddApolloInstanceRequest) -> Result<()> {
     }
 
     log!("Chain Added: {}", chain_id);
+
+    let (apollo_canister_status,) = canister_status(CanisterIdRecord {
+        canister_id: ic_cdk::id(),
+    })
+    .await
+    .map_err(|(_, err)| ApolloError::FailedToGetCanisterStatus(err.to_string()))?;
+
+    let mut controllers = apollo_canister_status.settings.controllers;
+    controllers.push(ic_cdk::id());
+
+    update_settings(UpdateSettingsArgument {
+        canister_id: canister_id,
+        settings: CanisterSettings {
+            controllers: Some(controllers),
+            compute_allocation: None,
+            memory_allocation: None,
+            freezing_threshold: None,
+        },
+    })
+    .await
+    .map_err(|(_, err)| ApolloInstanceError::FailedToUpdateSettings(err.to_string()))?;
+
+    log!("Controllers updated for canister: {}", canister_id);
+
     Ok(())
 }
 

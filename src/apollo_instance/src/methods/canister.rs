@@ -27,22 +27,29 @@ fn update_metadata(update_metadata_args: UpdateMetadata) -> Result<()> {
     Ok(())
 }
 
+#[candid_method]
+#[update]
+fn update_timer_frequency_sec(timer_frequency_sec: u64) -> Result<()> {
+    update_state!(timer_frequency_sec, timer_frequency_sec);
+    Ok(())
+}
+
 /// Set's last request id from apollo coordinator.
 /// Automatically sets to max request_id from apollo coordinator if not provided.
 #[candid_method]
 #[update]
 async fn update_last_request_id(request_id: Option<u64>) -> Result<()> {
     if let Some(request_id) = request_id {
-        update_state!(last_request_id, request_id);
+        update_state!(last_request_id, Some(request_id));
     } else {
         // This func is automatically aborted by icp because of wait_success_confirmation func.
         // So, we just spawn a new async task to update last_request_id in the background.
         ic_cdk::spawn(async {
-            log!("Current request id: {}", get_state!(last_request_id));
+            log!("Current request id: {:?}", get_state!(last_request_id));
             if let Err(e) = jobs::apollo_coordinator_polling::update_last_request_id().await {
                 log!("Error while executing publisher job: {e:?}");
             }
-            log!("Updated request id: {}", get_state!(last_request_id));
+            log!("Updated request id: {:?}", get_state!(last_request_id));
         });
     }
 
