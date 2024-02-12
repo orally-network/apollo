@@ -34,8 +34,9 @@ impl Timer {
     }
 
     pub fn set_timer(func: impl FnOnce() + 'static) {
-        Timer::activate();
+        log!("Setting timer");
         let timer_id = set_timer(Duration::from_secs(get_state!(timer_frequency_sec)), func);
+        log!("Timer set");
         Timer::update(timer_id);
     }
 

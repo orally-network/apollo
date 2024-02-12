@@ -9,8 +9,8 @@ use ic_utils::{
 };
 
 use crate::{
-    memory,
-    types::{State, STATE},
+    jobs, memory,
+    types::{timer::Timer, State, STATE},
     utils::set_custom_panic_hook,
 };
 
@@ -26,6 +26,10 @@ async fn post_upgrade() {
     set_custom_panic_hook();
 
     load_upgrade_data();
+    if Timer::is_active() {
+        jobs::execute();
+    }
+
     log!("Post upgrade finished");
 }
 

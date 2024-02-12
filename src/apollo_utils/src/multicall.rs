@@ -259,6 +259,8 @@ async fn execute_multicall_batch<T: Transport>(
 
     // log!("[MULTICALL] chain: {}, max gas {}", chain_id, max_gas);
 
+    log!("[MULTICALL] estimating gas for multicall");
+
     let mut estimated_gas = Web3Instance::estimate_gas(
         contract,
         MULTICALL_CALL_FUNCTION,

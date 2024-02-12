@@ -6,6 +6,7 @@ use crate::{jobs::execute, types::timer::Timer};
 #[candid_method]
 #[update]
 pub fn start() {
+    Timer::activate();
     execute();
 }
 
