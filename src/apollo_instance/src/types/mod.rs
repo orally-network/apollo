@@ -4,7 +4,7 @@ use apollo_utils::{apollo_instance::Metadata, memory::Cbor};
 use ic_stable_structures::StableCell;
 use ic_web3_rs::{
     contract::{tokens::Tokenizable, Error},
-    ethabi::Token,
+    ethabi::{Log, Token},
     types::{H160, U256},
 };
 use serde::{Deserialize, Serialize};
@@ -27,7 +27,10 @@ pub struct State {
     // Frequency in seconds to check apollo coordinator for new requests
     pub timer_frequency_sec: u64,
     pub timer: Timer,
+    // last request id for apollo_coordinator_polling
     pub last_request_id: Option<u64>,
+    // last parsed block for logs_polling
+    pub last_parsed_logs_from_block: Option<u64>,
 }
 
 thread_local! {
@@ -47,6 +50,7 @@ impl Default for State {
             timer_frequency_sec: 0,
             timer: Timer::default(),
             last_request_id: None,
+            last_parsed_logs_from_block: None,
         }
     }
 }
@@ -57,6 +61,51 @@ pub struct ApolloCoordinatorRequest {
     pub feed_id: String,
     pub callback_gas_limit: U256,
     pub requester: H160,
+}
+
+impl From<Log> for ApolloCoordinatorRequest {
+    fn from(log: Log) -> Self {
+        let params = log.params;
+
+        let request_id = params
+            .get(0)
+            .expect("should be able to get request_id from log")
+            .value
+            .clone()
+            .into_uint()
+            .expect("should be able to convert to uint");
+
+        let feed_id = params
+            .get(1)
+            .expect("should be able to get feed_id from log")
+            .value
+            .clone()
+            .into_string()
+            .expect("should be able to convert to string");
+
+        let callback_gas_limit = params
+            .get(2)
+            .expect("should be able to get callback_gas_limit from log")
+            .value
+            .clone()
+            .into_uint()
+            .expect("should be able to convert to uint");
+
+        let requester = params
+            .get(3)
+            .expect("should be able to get requester from log")
+            .value
+            .clone()
+            .into_address()
+            .expect("should be able to convert to address");
+
+        Self {
+            request_id,
+            feed_id,
+            callback_gas_limit,
+            requester,
+        }
+    }
 }
 
 impl Tokenizable for ApolloCoordinatorRequest {

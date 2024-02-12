@@ -27,7 +27,7 @@ async fn post_upgrade() {
 
     load_upgrade_data();
     if Timer::is_active() {
-        jobs::execute();
+        Timer::set_timer(jobs::execute);
     }
 
     log!("Post upgrade finished");

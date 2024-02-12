@@ -7,8 +7,8 @@ use ic_web3_rs::{
     ic::KeyInfo,
     transports::{ic_http_client::CallOptionsBuilder, ICHttp},
     types::{
-        BlockId, Bytes, CallRequest, SignedTransaction, Transaction, TransactionId,
-        TransactionReceipt, H160, H256, U256, U64,
+        BlockId, BlockNumber, Bytes, CallRequest, FilterBuilder, Log, SignedTransaction,
+        Transaction, TransactionId, TransactionReceipt, H160, H256, U256, U64,
     },
     Transport, Web3,
 };
@@ -51,6 +51,57 @@ impl<T: Transport> Web3Instance<T> {
             key_name,
             ecdsa_sign_cycles: Some(ECDSA_SIGN_CYCLES),
         }
+    }
+
+    pub async fn get_block_number(&self) -> Result<u64, Web3Error> {
+        self.eth()
+            .block_number(http::transform_ctx())
+            .await
+            .map_err(|err| Web3Error::UnableToGetBlockNumber(err.to_string()))
+            .map(|val| val.as_u64())
+    }
+
+    pub async fn get_logs(
+        &self,
+        from: u64,
+        to: Option<u64>,
+        topic: Option<H256>,
+        address: Option<H160>,
+    ) -> Result<Vec<Log>, Web3Error> {
+        let filter_builder = FilterBuilder::default();
+        let to_block = if let Some(to) = to {
+            BlockNumber::Number(to.into())
+        } else {
+            BlockNumber::Latest
+        };
+
+        let topic1 = if let Some(topic) = topic {
+            Some(vec![topic])
+        } else {
+            None
+        };
+
+        let address = if let Some(address) = address {
+            vec![address]
+        } else {
+            vec![]
+        };
+
+        let logs = self
+            .eth()
+            .logs(
+                filter_builder
+                    .from_block(BlockNumber::Number(from.into()))
+                    .to_block(to_block)
+                    .topics(topic1, None, None, None)
+                    .address(address)
+                    .build(),
+                http::transform_ctx(),
+            )
+            .await
+            .map_err(|err| Web3Error::UnableToGetLogs(err.to_string()))?;
+
+        Ok(logs)
     }
 
     pub async fn get_address_balance(&self, address: &str) -> Result<U256, Web3Error> {

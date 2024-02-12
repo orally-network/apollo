@@ -84,12 +84,14 @@ type Web3Error = variant {
   TxNotFound;
   UnableToCallContract : text;
   UtilsError : UtilsError;
+  UnableToGetBlockNumber : text;
   UnableToExecuteRawTx : text;
   UnableToGetNonce : text;
   UnableToGetGasPrice : text;
   TxTimeout;
   UnableToFormCallData : text;
   InvalidAddressFormat : text;
+  UnableToGetLogs : text;
 };
 service : (text, text) -> {
   add_apollo_instance : (AddApolloInstanceRequest) -> (Result);

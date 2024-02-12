@@ -55,6 +55,18 @@ pub enum UtilsError {
 }
 
 #[derive(Error, Debug, CandidType, Deserialize)]
+pub enum LogsPoolingError {
+    #[error("Web3 error: {0}")]
+    Web3Error(#[from] Web3Error),
+    #[error("Abi parsing error: {0}")]
+    AbiParsingError(String),
+    #[error("Failed to process requests: {0}")]
+    FailedToProcessRequests(String),
+    #[error("Utils error: {0}")]
+    UtilsError(#[from] UtilsError),
+}
+
+#[derive(Error, Debug, CandidType, Deserialize)]
 pub enum Web3Error {
     #[error("Unable to get gas_price: {0}")]
     UnableToGetGasPrice(String),
@@ -78,6 +90,10 @@ pub enum Web3Error {
     TxWithoutReceiver,
     #[error("Tx has failed")]
     TxHasFailed,
+    #[error("Unable to get block number: {0}")]
+    UnableToGetBlockNumber(String),
+    #[error("Unable to get logs: {0}")]
+    UnableToGetLogs(String),
     #[error("Unable to form call data: {0}")]
     UnableToFormCallData(String),
     #[error("Unable to decode output: {0}")]
