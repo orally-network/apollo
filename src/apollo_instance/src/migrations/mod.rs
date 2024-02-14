@@ -33,6 +33,23 @@ async fn post_upgrade() {
     log!("Post upgrade finished");
 }
 
+fn save_upgrade_data() {
+    let mut memory = memory::get_upgrades_memory();
+    let mut writer = Writer::new(&mut memory, 0);
+    save_state_data(&mut writer);
+    save_logger_data(&mut writer);
+    save_monitor_data(&mut writer);
+}
+
+fn load_upgrade_data() {
+    let memory = memory::get_upgrades_memory();
+    let mut reader = Reader::new(&memory, 0);
+
+    read_state_data(&mut reader);
+    read_logger_data(&mut reader);
+    read_monitor_data(&mut reader);
+}
+
 fn save_state_data(writer: &mut Writer<impl Memory>) {
     // Serialize the state.
     let mut state_bytes = vec![];
@@ -46,39 +63,6 @@ fn save_state_data(writer: &mut Writer<impl Memory>) {
 
     writer.write(&len.to_le_bytes()).unwrap();
     writer.write(&state_bytes).unwrap();
-}
-
-fn save_logger_data(writer: &mut Writer<impl Memory>) {
-    // Serialize the logger data.
-    let logger_data = logger::pre_upgrade_stable_data();
-
-    let mut logger_bytes = vec![];
-    ciborium::ser::into_writer(&logger_data, &mut logger_bytes).expect("failed to encode logger");
-    let len = logger_bytes.len() as u32;
-
-    writer.write(&len.to_le_bytes()).unwrap();
-    writer.write(&logger_bytes).unwrap();
-}
-
-fn save_monitor_data(writer: &mut Writer<impl Memory>) {
-    // Serialize the monitor data.
-    let monitor_data = monitor::pre_upgrade_stable_data();
-
-    let mut monitor_bytes = vec![];
-    ciborium::ser::into_writer(&monitor_data, &mut monitor_bytes)
-        .expect("failed to encode monitor");
-    let len = monitor_bytes.len() as u32;
-
-    writer.write(&len.to_le_bytes()).unwrap();
-    writer.write(&monitor_bytes).unwrap();
-}
-
-fn save_upgrade_data() {
-    let mut memory = memory::get_upgrades_memory();
-    let mut writer = Writer::new(&mut memory, 0);
-    save_state_data(&mut writer);
-    save_logger_data(&mut writer);
-    save_monitor_data(&mut writer);
 }
 
 fn read_state_data(reader: &mut Reader<impl Memory>) {
@@ -100,6 +84,19 @@ fn read_state_data(reader: &mut Reader<impl Memory>) {
     STATE.with(|s| s.replace(state));
 }
 
+fn save_logger_data(writer: &mut Writer<impl Memory>) {
+    // Serialize the logger data.
+    let logger_data = logger::pre_upgrade_stable_data();
+
+    let mut logger_bytes = vec![];
+    ciborium::ser::into_writer(&logger_data, &mut logger_bytes).expect("failed to encode logger");
+
+    let len = logger_bytes.len() as u32;
+
+    writer.write(&len.to_le_bytes()).unwrap();
+    writer.write(&logger_bytes).unwrap();
+}
+
 fn read_logger_data(reader: &mut Reader<impl Memory>) {
     let mut len_bytes = [0; 4];
 
@@ -109,14 +106,27 @@ fn read_logger_data(reader: &mut Reader<impl Memory>) {
     let logger_len = u32::from_le_bytes(len_bytes) as usize;
 
     // Read the bytes
-    let mut state_bytes = vec![0; logger_len];
-    reader.read_exact(&mut state_bytes).unwrap();
+    let mut logger_bytes = vec![0; logger_len];
+    reader.read_exact(&mut logger_bytes).unwrap();
 
     // Deserialize
     let log_data: (u8, LogMessageStorage) =
-        ciborium::de::from_reader(&*state_bytes).expect("failed to decode state");
+        ciborium::de::from_reader(&*logger_bytes).expect("failed to decode logger_data");
 
     logger::post_upgrade_stable_data(log_data);
+}
+
+fn save_monitor_data(writer: &mut Writer<impl Memory>) {
+    // Serialize the monitor data.
+    let monitor_data = monitor::pre_upgrade_stable_data();
+
+    let mut monitor_bytes = vec![];
+    ciborium::ser::into_writer(&monitor_data, &mut monitor_bytes)
+        .expect("failed to encode monitor");
+    let len = monitor_bytes.len() as u32;
+
+    writer.write(&len.to_le_bytes()).unwrap();
+    writer.write(&monitor_bytes).unwrap();
 }
 
 fn read_monitor_data(reader: &mut Reader<impl Memory>) {
@@ -128,21 +138,12 @@ fn read_monitor_data(reader: &mut Reader<impl Memory>) {
     let monitor_len = u32::from_le_bytes(len_bytes) as usize;
 
     // Read the bytes
-    let mut state_bytes = vec![0; monitor_len];
-    reader.read_exact(&mut state_bytes).unwrap();
+    let mut logger_bytes = vec![0; monitor_len];
+    reader.read_exact(&mut logger_bytes).unwrap();
 
     // Deserialize and set the state.
     let monitor_data: (u8, DayDataTable) =
-        ciborium::de::from_reader(&*state_bytes).expect("failed to decode state");
+        ciborium::de::from_reader(&*logger_bytes).expect("failed to decode monitor_data");
 
     monitor::post_upgrade_stable_data(monitor_data);
-}
-
-fn load_upgrade_data() {
-    let memory = memory::get_upgrades_memory();
-    let mut reader = Reader::new(&memory, 0);
-
-    read_state_data(&mut reader);
-    read_logger_data(&mut reader);
-    read_monitor_data(&mut reader);
 }

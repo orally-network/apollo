@@ -24,7 +24,10 @@ fn init(args: ApolloInstanceInit) {
 
 // For candid file auto-generation
 pub type Result<T> = std::result::Result<T, ApolloInstanceError>;
-use apollo_utils::apollo_instance::Metadata;
+pub type NatResult = std::result::Result<Nat, ApolloInstanceError>;
+pub type StringResult = std::result::Result<String, ApolloInstanceError>;
+
+use apollo_utils::apollo_instance::ApolloInstanceMetadata;
 use apollo_utils::apollo_instance::UpdateMetadata;
 
 candid::export_service!();

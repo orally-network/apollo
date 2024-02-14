@@ -23,14 +23,7 @@ type ApolloInstanceInit = record {
   timer_frequency_sec : nat64;
   apollos_fee : nat;
 };
-type BalancesError = variant {
-  NotEnoughFunds;
-  BalanceAlreadyExists;
-  UtilsError : UtilsError;
-  NonceIsTooLow;
-  BalanceDoesNotExist;
-};
-type Metadata = record {
+type ApolloInstanceMetadata = record {
   sybil_canister_address : text;
   chain_rpc : text;
   apollo_coordinator : text;
@@ -41,6 +34,13 @@ type Metadata = record {
   block_gas_limit : nat;
   min_balance : nat;
   apollos_fee : nat;
+};
+type BalancesError = variant {
+  NotEnoughFunds;
+  BalanceAlreadyExists;
+  UtilsError : UtilsError;
+  NonceIsTooLow;
+  BalanceDoesNotExist;
 };
 type Result = variant { Ok; Err : ApolloInstanceError };
 type Result_1 = variant { Ok : text; Err : ApolloInstanceError };
@@ -57,6 +57,7 @@ type UpdateMetadata = record {
 };
 type UtilsError = variant {
   FromHexError : text;
+  NotAController;
   FailedToGetApolloEvmAddress : text;
   InvalidAddressFormat : text;
 };
@@ -81,12 +82,12 @@ type Web3Error = variant {
   UnableToGetLogs : text;
 };
 service : (ApolloInstanceInit) -> {
-  deposit : (text, text, text) -> (Result);
+  deposit : (text, text, text, text) -> (Result);
   get_apollo_address : () -> (Result_1);
   get_balance : (text) -> (Result_2) query;
-  get_metadata : () -> (Metadata) query;
-  start : () -> ();
-  stop : () -> ();
+  get_metadata : () -> (ApolloInstanceMetadata) query;
+  start : () -> (Result);
+  stop : () -> (Result);
   update_last_request_id : (opt nat64) -> (Result);
   update_metadata : (UpdateMetadata) -> (Result);
   update_timer_frequency_sec : (nat64) -> (Result);

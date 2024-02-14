@@ -8,7 +8,7 @@ use apollo_utils::{
 use candid::{candid_method, Nat};
 use ic_cdk::{query, update};
 
-use crate::{types::balances::Balances, utils::apollo_evm_address, Result};
+use crate::{types::balances::Balances, utils::apollo_evm_address, NatResult, Result};
 
 /// Get balance of the user
 ///
@@ -20,7 +20,7 @@ use crate::{types::balances::Balances, utils::apollo_evm_address, Result};
 /// Returns a result with address's balance
 #[candid_method]
 #[query]
-pub fn get_balance(address: String) -> Result<Nat> {
+pub fn get_balance(address: String) -> NatResult {
     Ok(Balances::get(&address).unwrap_or_default().amount)
 }
 
@@ -29,6 +29,7 @@ pub fn get_balance(address: String) -> Result<Nat> {
 /// # Arguments
 ///
 /// * `tx_hash` - Hash of the transaction, where funds were transfered to the AMA
+/// * `address` - Address of the user, where to deposit funds
 /// * `msg` - SIWE message, For more information, refer to the [SIWE message specification](https://eips.ethereum.org/EIPS/eip-4361)
 /// * `sig` - SIWE signature, For more information, refer to the [SIWE message specification](https://eips.ethereum.org/EIPS/eip-4361)
 ///
@@ -37,8 +38,8 @@ pub fn get_balance(address: String) -> Result<Nat> {
 /// Returns a result that can contain an error message
 #[candid_method]
 #[update]
-pub async fn deposit(tx_hash: String, msg: String, sig: String) -> Result<()> {
-    let address = apollo_utils::siwe::recover(msg, sig).await;
+pub async fn deposit(tx_hash: String, address: String, msg: String, sig: String) -> Result<()> {
+    let sender = apollo_utils::siwe::recover(msg, sig).await;
 
     let w3 = web3::instance(&get_metadata!(chain_rpc))?;
 
@@ -52,12 +53,12 @@ pub async fn deposit(tx_hash: String, msg: String, sig: String) -> Result<()> {
         return Err(ApolloInstanceError::TxWasNotSentToAMA);
     }
 
-    Balances::save_nonce(&address, &tx.nonce.to_nat())?;
+    Balances::save_nonce(&sender, &tx.nonce.to_nat())?;
 
     let amount = tx.value.to_nat();
 
     Balances::add_amount(&address, &amount)?;
 
-    log!("[BALANCES] {address} deposited amount {amount}");
+    log!("[BALANCES] {sender} deposited amount {amount}");
     Ok(())
 }

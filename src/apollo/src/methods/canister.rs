@@ -1,9 +1,9 @@
-use std::collections::HashMap;
-
 use crate::methods::INIT_CYCLES_BALANCE;
+use crate::types::apollo_instance::AddApolloInstanceRequest;
 use crate::types::UpdateMetadata;
 use crate::types::{apollo_instance::ApolloInstance, Metadata, STATE};
 use apollo_utils::apollo_instance::ApolloInstanceInit;
+use apollo_utils::canister::validate_caller;
 use apollo_utils::errors::{ApolloError, ApolloInstanceError};
 use apollo_utils::get_metadata;
 use apollo_utils::log;
@@ -18,7 +18,7 @@ use ic_cdk::api::management_canister::main::{
 use ic_cdk::api::management_canister::provisional::{CanisterIdRecord, CanisterSettings};
 use ic_cdk::{query, update};
 
-use crate::{AddApolloInstanceRequest, Result};
+use crate::{GetApolloInstanceResult, Result};
 
 #[candid_method]
 #[query]
@@ -29,6 +29,7 @@ fn get_metadata() -> Metadata {
 #[candid_method]
 #[update]
 fn update_metadata(update_metadata_args: UpdateMetadata) -> Result<()> {
+    validate_caller()?;
     STATE.with(|s| {
         let mut state = s.borrow_mut();
         let mut metadata = state.metadata.get().0.clone();
@@ -41,12 +42,15 @@ fn update_metadata(update_metadata_args: UpdateMetadata) -> Result<()> {
 
 #[candid_method]
 #[query]
-fn get_apollo_instances() -> HashMap<u32, ApolloInstance> {
+fn get_apollo_instances() -> Vec<GetApolloInstanceResult> {
     STATE.with(|s| {
         s.borrow()
             .chains
             .iter()
-            .map(|(k, v)| (k, v.0.clone()))
+            .map(|(k, v)| GetApolloInstanceResult {
+                chain_id: k,
+                apollo_instance: v.0.clone(),
+            })
             .collect()
     })
 }
@@ -54,6 +58,8 @@ fn get_apollo_instances() -> HashMap<u32, ApolloInstance> {
 #[candid_method]
 #[update]
 fn add_apollo_instances_manually(apollo_instances: Vec<ApolloInstance>) -> Result<()> {
+    validate_caller()?;
+
     log!("ADDING APOLLO INSTANCES MANUALLY");
     STATE.with(|s| {
         let mut state = s.borrow_mut();
@@ -70,6 +76,8 @@ fn add_apollo_instances_manually(apollo_instances: Vec<ApolloInstance>) -> Resul
 #[candid_method]
 #[update]
 async fn add_apollo_instance(req: AddApolloInstanceRequest) -> Result<()> {
+    validate_caller()?;
+
     log!(
         "Accepted {} cycles",
         ic_cdk::api::call::msg_cycles_accept128(INIT_CYCLES_BALANCE)
@@ -172,6 +180,8 @@ async fn add_apollo_instance(req: AddApolloInstanceRequest) -> Result<()> {
 #[update]
 // TODO: where did cycles go ?
 async fn remove_apollo_instance(chain_id: Nat) -> Result<()> {
+    validate_caller()?;
+
     log!("Removing Chain: {}", chain_id);
 
     let apollo_instance = crate::get_apollo_instance!(chain_id.clone());
@@ -213,7 +223,11 @@ pub async fn upgrade_chains() -> Result<()> {
     let wasm = include_bytes!("../../../../assets/apollo_instance.wasm").to_vec();
     let apollo_instances = get_apollo_instances();
 
-    for (chain_id, apollo_instance) in apollo_instances {
+    for GetApolloInstanceResult {
+        chain_id,
+        apollo_instance,
+    } in apollo_instances
+    {
         match install_code(InstallCodeArgument {
             mode: CanisterInstallMode::Upgrade,
             canister_id: apollo_instance.canister_id,

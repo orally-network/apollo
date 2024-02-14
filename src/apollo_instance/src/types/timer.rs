@@ -27,8 +27,6 @@ impl Timer {
                 is_active: old_timer.is_active,
             };
 
-            log!("[TIMER] Timer updated, is_active = {}", new_timer.is_active);
-
             state.timer = new_timer;
         });
     }

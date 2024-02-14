@@ -16,6 +16,7 @@ const MULTICALL_ABI: &[u8] = include_bytes!("../../../assets/MulticallABI.json")
 const MULTICALL_CALL_FUNCTION: &str = "multicall";
 const MULTICALL_TRANSFER_FUNCTION: &str = "multitransfer";
 pub const BASE_GAS: u64 = 27_000;
+const GAS_FOR_OPS: u64 = 10_000;
 pub const GAS_PER_TRANSFER: u64 = 7_900;
 
 #[derive(Debug, Clone, Default)]
@@ -249,70 +250,54 @@ async fn execute_multicall_batch<T: Transport>(
         multicall_args.calls.len()
     );
 
-    let mut options = Options {
+    let options = Options {
         gas_price: Some(*gas_price),
         nonce: Some(w3.get_nonce(&from).await?),
+        gas: Some(
+            multicall_args
+                .calls
+                .iter()
+                .fold(U256::from(BASE_GAS + GAS_FOR_OPS), |result, call| {
+                    result + call.gas_limit
+                }),
+        ),
         ..Default::default()
     };
 
-    // let max_gas = block_gas_limit / multicall_args.calls.len();
-
-    // log!("[MULTICALL] chain: {}, max gas {}", chain_id, max_gas);
-
     log!("[MULTICALL] estimating gas for multicall");
 
-    let mut estimated_gas = Web3Instance::estimate_gas(
-        contract,
-        MULTICALL_CALL_FUNCTION,
-        multicall_args.clone(),
-        &from,
-        &options,
-    )
-    .await?;
+    // TODO: maybe implement better gas estimation
+
+    // let mut estimated_gas = Web3Instance::estimate_gas(
+    //     contract,
+    //     MULTICALL_CALL_FUNCTION,
+    //     multicall_args.clone(),
+    //     &from,
+    //     &options,
+    // )
+    // .await?;
 
     // log!("[MULTICALL] gas_price: {}", gas_price);
-    log!("[MULTICALL] estimated gas: {}", estimated_gas);
+    // log!("[MULTICALL] estimated gas: {}", estimated_gas);
 
-    let additional_gas = multicall_args
-        .calls
-        .iter()
-        .fold(U256::from(0), |sum, c| sum + c.gas_limit);
+    // let additional_gas = multicall_args
+    //     .calls
+    //     .iter()
+    //     .fold(U256::from(0), |sum, c| sum + c.gas_limit);
     // TODO: ic users gas_limit will be too big, error
     // `RPC error: Error { code: ServerError(-32000), message: "tx fee (12.85 ether) exceeds the configured cap (1.00 ether)", data: None }`
     // will be returned
 
-    log!("[MULTICALL] additional gas: {}", additional_gas);
+    // log!("[MULTICALL] additional gas: {}", additional_gas);
 
-    estimated_gas = estimated_gas + additional_gas;
+    // estimated_gas = estimated_gas + additional_gas;
 
-    options.gas = Some(estimated_gas);
-    log!(
-        "[MULTICALL] chain: {}, estimated gas & limit: {}",
-        chain_id,
-        options.gas.unwrap()
-    );
-
-    // TODO: implement separate function for this
-
-    // let estimatet_multicall_results = w3
-    //     .get_call_result(
-    //         contract,
-    //         MULTICALL_CALL_FUNCTION,
-    //         &params,
-    //         address::to_h160(&from)?,
-    //         Some(contract.address()),
-    //         None,
-    //     )
-    //     .await?;
-
-    // let mut filtered_batch: Vec<Call>;
-    // for (result, call) in estimatet_multicall_results.iter().zip(batch) {
-    //     let result = MulticallResult::from_token(result.clone())
-    //         .map_err(|err| MulticallError::ContractError(err.to_string()))?;
-    //     if result.used_gas <= call.gas_limit && result.used_gas <=  {}
-    // }
-
-    //
+    // options.gas = Some(estimated_gas);
+    // log!(
+    //     "[MULTICALL] chain: {}, estimated gas & limit: {}",
+    //     chain_id,
+    //     options.gas.unwrap()
+    // );
 
     let params = vec![multicall_args.clone().into_token()];
 

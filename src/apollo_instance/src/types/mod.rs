@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 
-use apollo_utils::{apollo_instance::Metadata, memory::Cbor};
+use apollo_utils::{apollo_instance::ApolloInstanceMetadata, memory::Cbor};
 use ic_stable_structures::StableCell;
 use ic_web3_rs::{
     contract::{tokens::Tokenizable, Error},
@@ -19,7 +19,7 @@ pub mod timer;
 #[derive(Serialize, Deserialize)]
 pub struct State {
     #[serde(skip, default = "init_metadata")]
-    pub metadata: StableCell<Cbor<Metadata>, VMemory>, // TODO: move out to a separate Metadata struct
+    pub metadata: StableCell<Cbor<ApolloInstanceMetadata>, VMemory>, // TODO: move out to a separate Metadata struct
 
     #[serde(skip)]
     pub balances: Balances,
@@ -37,8 +37,8 @@ thread_local! {
     pub static STATE: RefCell<State> = RefCell::new(State::default());
 }
 
-fn init_metadata() -> StableCell<Cbor<Metadata>, VMemory> {
-    let metadata = Cbor(Metadata::default());
+fn init_metadata() -> StableCell<Cbor<ApolloInstanceMetadata>, VMemory> {
+    let metadata = Cbor(ApolloInstanceMetadata::default());
     StableCell::init(crate::memory::get_metadata_memory(), metadata).unwrap()
 }
 

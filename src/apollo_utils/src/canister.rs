@@ -1,9 +1,11 @@
 use candid::Principal;
-use ic_cdk::{query, update};
+use ic_cdk::{api::is_controller, query, update};
 use ic_web3_rs::{
     ethabi::Address,
     ic::{get_public_key, pubkey_to_address},
 };
+
+use crate::errors::UtilsError;
 
 /// get canister's eth address
 /// TODO: delete ?
@@ -24,7 +26,15 @@ pub async fn get_eth_addr(
     }
 }
 
-fn validate_caller() {
+pub fn validate_caller() -> Result<(), UtilsError> {
+    if is_controller(&ic_cdk::caller()) {
+        return Ok(());
+    }
+
+    Err(UtilsError::NotAController)
+}
+
+fn validate_canistergeek_caller() {
     match Principal::from_text("hozae-racaq-aaaaa-aaaaa-c") {
         Ok(caller) if caller == ic_cdk::caller() => (),
         _ => ic_cdk::trap("Invalid caller"),
@@ -42,6 +52,6 @@ pub async fn get_canistergeek_information(
 pub async fn update_canistergeek_information(
     request: ic_utils::api_type::UpdateInformationRequest,
 ) -> () {
-    validate_caller();
+    validate_canistergeek_caller();
     ic_utils::update_information(request);
 }

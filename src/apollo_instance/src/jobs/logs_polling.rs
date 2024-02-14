@@ -27,8 +27,6 @@ pub async fn _execute() -> Result<(), LogsPoolingError> {
     // multiply the gas_price to 1.2 to avoid long transaction confirmation
     let gas_price: U256 = (w3.get_gas_price().await? / 10) * 12;
 
-    log!("Got requests: {:?}", requests);
-
     process_requests(&w3, requests, gas_price)
         .await
         .map_err(|err| LogsPoolingError::FailedToProcessRequests(err.to_string()))?;
@@ -57,7 +55,7 @@ async fn get_requests<T: Transport>(
         last_parsed_logs_from_block
     );
 
-    let logs = w3
+    let logs_result = w3
         .get_logs(
             // 5273204,
             last_parsed_logs_from_block,
@@ -66,14 +64,25 @@ async fn get_requests<T: Transport>(
             Some(H256::from_str(PRICE_FEED_REQUESTED_TOPIC).expect("should be able to parse")),
             Some(address::to_h160(&get_metadata!(apollo_coordinator))?),
         )
-        .await?;
+        .await;
+
+    let logs = match logs_result {
+        Ok(logs) => logs,
+        Err(err) => {
+            if err.to_string().contains("block range is too wide") {
+                log!("[EXECUTION] Block range is too wide, updating last_parsed_logs_from_block to the latest block");
+                return Ok((vec![], w3.get_block_number().await?));
+            }
+
+            return Err(err.into());
+        }
+    };
 
     let abi_event = get_abi_event();
 
     let mut requests = Vec::with_capacity(logs.len());
 
     if logs.is_empty() {
-        log!("[EXECUTION] No logs found");
         return Ok((requests, last_parsed_logs_from_block));
     }
 

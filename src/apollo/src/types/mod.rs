@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 
 use apollo_utils::memory::Cbor;
-use candid::{CandidType, Nat};
+use candid::CandidType;
 use ic_stable_structures::{StableBTreeMap, StableCell};
 use serde::{Deserialize, Serialize};
 
@@ -10,14 +10,7 @@ use crate::memory::VMemory;
 use self::apollo_instance::ApolloInstance;
 
 pub mod apollo_instance;
-pub mod candid_types;
-
-#[derive(Serialize, Deserialize, Default, CandidType, Clone)]
-pub struct ApolloIntanceMetadata {
-    pub tx_fee: Nat,
-    pub key_name: String,
-    pub chain_id: Nat,
-}
+pub mod custom_return_types;
 
 #[derive(Serialize, Deserialize, Debug, Default, CandidType, Clone)]
 pub struct Metadata {

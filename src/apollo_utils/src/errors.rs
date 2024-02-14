@@ -52,6 +52,8 @@ pub enum UtilsError {
     FromHexError(String),
     #[error("Failed to get apollo evm address: {0}")]
     FailedToGetApolloEvmAddress(String),
+    #[error("Not a controller")]
+    NotAController,
 }
 
 #[derive(Error, Debug, CandidType, Deserialize)]

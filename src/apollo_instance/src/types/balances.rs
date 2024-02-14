@@ -54,40 +54,6 @@ impl Balances {
         })
     }
 
-    // If address exists:
-    //  Return Err(BalanceAlreadyExists)
-    // If address does not exist:
-    //  Create new balance
-    pub fn create(address: &str) -> Result<(), BalancesError> {
-        let address = address::normalize(address)?;
-        let chain_id = get_metadata!(chain_id);
-        STATE.with(|state| {
-            let mut state = state.borrow_mut();
-            let inner = state.balances.0.borrow_mut();
-            if inner.contains_key(&address) {
-                return Err(BalancesError::BalanceAlreadyExists);
-            }
-            log!(
-                "[BALANCES] Balance created: chain_id = {}, address = {}",
-                chain_id,
-                address
-            );
-
-            inner.insert(address.clone(), Cbor(UserBalance::default()));
-
-            Ok(())
-        })
-    }
-
-    pub fn is_exists(address: &str) -> Result<bool, BalancesError> {
-        let address = address::normalize(address)?;
-        STATE.with(|state| {
-            let state = state.borrow();
-            let inner = state.balances.0.borrow();
-            Ok(inner.contains_key(&address))
-        })
-    }
-
     pub fn save_nonce(address: &str, nonce: &Nat) -> Result<(), BalancesError> {
         let address = address::normalize(address)?;
         STATE.with(|state| {
@@ -185,29 +151,6 @@ impl Balances {
 
         Ok(&balance.amount >= amount)
     }
-
-    pub fn clear(address: &str) -> Result<()> {
-        let address = address::normalize(address)?;
-        let chain_id = get_metadata!(chain_id);
-
-        STATE.with(|state| {
-            let mut state = state.borrow_mut();
-            let inner = state.balances.0.borrow_mut();
-
-            let mut balance = inner.get(&address).unwrap_or_default();
-
-            balance.amount = Nat::from(0);
-
-            inner.insert(address.clone(), balance);
-
-            log!(
-                "[BALANCES] Balance cleared: chain_id = {}, address = {}",
-                chain_id,
-                address
-            );
-            Ok(())
-        })
-    }
 }
 
 #[cfg(test)]
@@ -216,12 +159,6 @@ mod tests {
 
     #[test]
     fn test_nonce() -> anyhow::Result<()> {
-        Balances::create("0x89A4e2Cf7F72b6e462bbA27FEa4d40c3da1d46cd")?;
-
-        assert!(Balances::is_exists(
-            "0x89A4e2Cf7F72b6e462bbA27FEa4d40c3da1d46cd",
-        )?);
-
         Balances::save_nonce("0x89A4e2Cf7F72b6e462bbA27FEa4d40c3da1d46cd", &Nat::from(1))?;
 
         let user_balances = Balances::get("0x89A4e2Cf7F72b6e462bbA27FEa4d40c3da1d46cd")?;
@@ -239,8 +176,6 @@ mod tests {
 
     #[test]
     fn test_changing_amount() -> anyhow::Result<()> {
-        Balances::create("0x89A4e2Cf7F72b6e462bbA27FEa4d40c3da1d46cd")?;
-
         Balances::add_amount(
             "0x89A4e2Cf7F72b6e462bbA27FEa4d40c3da1d46cd",
             &Nat::from(1234567890),

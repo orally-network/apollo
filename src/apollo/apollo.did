@@ -34,14 +34,7 @@ type ApolloInstanceError = variant {
   FailedToCreate : text;
   TxWasNotSentToAMA;
 };
-type BalancesError = variant {
-  NotEnoughFunds;
-  BalanceAlreadyExists;
-  UtilsError : UtilsError;
-  NonceIsTooLow;
-  BalanceDoesNotExist;
-};
-type Metadata = record {
+type ApolloInstanceMetadata = record {
   sybil_canister_address : text;
   chain_rpc : text;
   apollo_coordinator : text;
@@ -53,11 +46,25 @@ type Metadata = record {
   min_balance : nat;
   apollos_fee : nat;
 };
-type Metadata_1 = record { sybil_canister_address : text; key_name : text };
+type ApolloInstanceMetadataResult = variant {
+  Ok : ApolloInstanceMetadata;
+  Err : ApolloError;
+};
+type BalancesError = variant {
+  NotEnoughFunds;
+  BalanceAlreadyExists;
+  UtilsError : UtilsError;
+  NonceIsTooLow;
+  BalanceDoesNotExist;
+};
+type GetApolloInstanceResult = record {
+  chain_id : nat32;
+  apollo_instance : ApolloInstance;
+};
+type Metadata = record { sybil_canister_address : text; key_name : text };
+type NatResult = variant { Ok : nat; Err : ApolloError };
 type Result = variant { Ok; Err : ApolloError };
-type Result_1 = variant { Ok : text; Err : ApolloError };
-type Result_2 = variant { Ok : Metadata; Err : ApolloError };
-type Result_3 = variant { Ok : nat; Err : ApolloError };
+type StringResult = variant { Ok : text; Err : ApolloError };
 type UpdateMetadata = record {
   sybil_canister_address : opt text;
   chain_rpc : opt text;
@@ -70,6 +77,7 @@ type UpdateMetadata = record {
 };
 type UtilsError = variant {
   FromHexError : text;
+  NotAController;
   FailedToGetApolloEvmAddress : text;
   InvalidAddressFormat : text;
 };
@@ -96,12 +104,12 @@ type Web3Error = variant {
 service : (text, text) -> {
   add_apollo_instance : (AddApolloInstanceRequest) -> (Result);
   add_apollo_instances_manually : (vec ApolloInstance) -> (Result);
-  deposit : (nat, text, text, text) -> (Result);
-  get_ama : (nat) -> (Result_1);
-  get_apollo_instance_metadata : (nat) -> (Result_2);
-  get_apollo_instances : () -> (vec record { nat32; ApolloInstance }) query;
-  get_balance : (nat, text) -> (Result_3) query;
-  get_metadata : () -> (Metadata_1) query;
+  deposit : (nat, text, text, text, text) -> (Result);
+  get_ama : (nat) -> (StringResult);
+  get_apollo_instance_metadata : (nat) -> (ApolloInstanceMetadataResult);
+  get_apollo_instances : () -> (vec GetApolloInstanceResult) query;
+  get_balance : (nat, text) -> (NatResult);
+  get_metadata : () -> (Metadata) query;
   remove_apollo_instance : (nat) -> (Result);
   start : (nat) -> (Result);
   stop : (nat) -> (Result);

@@ -16,7 +16,7 @@ pub struct ApolloInstanceInit {
 }
 
 #[derive(Serialize, Debug, Deserialize, CandidType, Clone)]
-pub struct Metadata {
+pub struct ApolloInstanceMetadata {
     pub apollos_fee: Nat,
     pub key_name: String,
     pub chain_id: Nat,
@@ -41,7 +41,7 @@ pub struct UpdateMetadata {
     pub min_balance: Option<Nat>,
 }
 
-impl Metadata {
+impl ApolloInstanceMetadata {
     pub fn update(&mut self, update: UpdateMetadata) {
         if let Some(apollos_fee) = update.apollos_fee {
             self.apollos_fee = apollos_fee;
@@ -70,7 +70,7 @@ impl Metadata {
     }
 }
 
-impl Default for Metadata {
+impl Default for ApolloInstanceMetadata {
     fn default() -> Self {
         Self {
             apollos_fee: Nat::from(0),
@@ -88,7 +88,7 @@ impl Default for Metadata {
 }
 
 // Used to generate metadata from ApolloInstanceInit
-impl From<ApolloInstanceInit> for Metadata {
+impl From<ApolloInstanceInit> for ApolloInstanceMetadata {
     fn from(init: ApolloInstanceInit) -> Self {
         Self {
             apollos_fee: init.apollos_fee,

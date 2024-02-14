@@ -1,16 +1,16 @@
 use apollo_utils::{
+    address,
     errors::MulticallError,
     get_metadata, log,
     multicall::{self, Call},
-    nat::ToNativeTypes,
+    nat::{ToNatType, ToNativeTypes},
     sybil::get_sybil_input,
-    update_state,
     web3::Web3Instance,
 };
 use ic_web3_rs::{ethabi::Function, types::U256, Transport};
 
 use crate::{
-    types::{timer::Timer, ApolloCoordinatorRequest},
+    types::{balances::Balances, timer::Timer, ApolloCoordinatorRequest},
     utils::apollo_evm_address,
 };
 
@@ -35,7 +35,7 @@ pub fn execute() {
             log!("Publisher job executed successfully");
         }
 
-        // Timer::set_timer(execute);
+        Timer::set_timer(execute);
     });
 }
 
@@ -49,21 +49,30 @@ async fn process_requests<T: Transport>(
         return Ok(());
     }
 
+    log!("[EXECUTION] Processing {} requests", requests.len());
+
     let mut calls = Vec::with_capacity(requests.len());
 
     for apollo_coordinator_request in requests {
         // TODO: implement balance check
-        // if Balances::get(&format!("{:?}", apollo_coordinator_request.requester))?.amount
-        //     < get_metadata!(min_balance)
-        // {
-        //     log!(
-        //         "[EXECUTION] chain: {}, not enough balance for requester {}",
-        //         get_metadata!(chain_id),
-        //         apollo_coordinator_request.requester
-        //     );
+        if Balances::get(&address::from_h160(&apollo_coordinator_request.requester))?.amount
+            < get_metadata!(min_balance)
+                + apollo_coordinator_request.callback_gas_limit.to_nat()
+                + get_metadata!(apollos_fee)
+        {
+            log!(
+                "[EXECUTION] chain: {}, not enough balance for requester {}. Needed (min_balance + callback_gas_limit + apollos_fee): {} + {} + {} = {}, current: {}",
+                get_metadata!(chain_id),
+                apollo_coordinator_request.requester,
+                get_metadata!(min_balance),
+                apollo_coordinator_request.callback_gas_limit,
+                get_metadata!(apollos_fee),
+                get_metadata!(min_balance) + apollo_coordinator_request.callback_gas_limit.to_nat() + get_metadata!(apollos_fee),
+                Balances::get(&address::from_h160(&apollo_coordinator_request.requester))?.amount
+            );
 
-        //     continue;
-        // }
+            continue;
+        }
 
         let target_func = serde_json::from_str::<Function>(TARGET_FUNCTION_ABI)?;
         let call_data = target_func
@@ -114,12 +123,10 @@ async fn process_requests<T: Transport>(
             panic!("used_gas is greater than gas_limit"); //TODO: check and remove
         }
 
-        // TODO: implement balance reduction
-        // let amount = gas_price.to_nat() * result.used_gas.to_nat() + get_metadata!(apollos_fee);
+        let amount = gas_price.to_nat() * result.used_gas.to_nat() + get_metadata!(apollos_fee);
 
-        // Balances::reduce_amount(&format!("{:?}", call.target), &amount)
-        //     .expect("should reduce balance");
-        // TODO: add fee collection
+        Balances::reduce_amount(&format!("{:?}", call.target), &amount)
+            .expect("should reduce balance");
     }
 
     Ok(())

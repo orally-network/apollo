@@ -2,5 +2,8 @@
   "apollo": {
     "ic": "ndeka-riaaa-aaaak-afmaq-cai",
     "staging": "ndeka-riaaa-aaaak-afmaq-cai"
+  },
+  "apollo_instance": {
+    "local": "a3shf-5eaaa-aaaaa-qaafa-cai"
   }
 }
