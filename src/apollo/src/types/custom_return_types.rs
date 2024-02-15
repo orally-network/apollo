@@ -23,7 +23,7 @@ pub enum NatResult {
     Err(ApolloError),
 }
 
-#[derive(Debug, CandidType)]
+#[derive(Debug, CandidType, Clone)]
 pub struct GetApolloInstanceResult {
     pub chain_id: u32,
     pub apollo_instance: ApolloInstance,

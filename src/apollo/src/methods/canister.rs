@@ -9,6 +9,7 @@ use apollo_utils::get_metadata;
 use apollo_utils::log;
 use apollo_utils::memory::Cbor;
 use apollo_utils::nat::ToNativeTypes;
+use apollo_utils::pagination::{Pagination, PaginationResult};
 use candid::{candid_method, encode_args, Nat};
 use ic_cdk::api::management_canister::main::{
     canister_status, create_canister, delete_canister, install_code, stop_canister,
@@ -42,8 +43,10 @@ fn update_metadata(update_metadata_args: UpdateMetadata) -> Result<()> {
 
 #[candid_method]
 #[query]
-fn get_apollo_instances() -> Vec<GetApolloInstanceResult> {
-    STATE.with(|s| {
+fn get_apollo_instances(
+    pagination: Option<Pagination>,
+) -> PaginationResult<GetApolloInstanceResult> {
+    let mut apollo_instances: Vec<_> = STATE.with(|s| {
         s.borrow()
             .chains
             .iter()
@@ -52,7 +55,15 @@ fn get_apollo_instances() -> Vec<GetApolloInstanceResult> {
                 apollo_instance: v.0.clone(),
             })
             .collect()
-    })
+    });
+
+    match pagination {
+        Some(pagination) => {
+            apollo_instances.sort_by(|l, r| l.chain_id.cmp(&r.chain_id));
+            pagination.paginate(apollo_instances)
+        }
+        None => apollo_instances.into(),
+    }
 }
 
 #[candid_method]
@@ -221,7 +232,7 @@ pub async fn upgrade_chains() -> Result<()> {
     log!("Updating apollo instances");
 
     let wasm = include_bytes!("../../../../assets/apollo_instance.wasm").to_vec();
-    let apollo_instances = get_apollo_instances();
+    let apollo_instances = get_apollo_instances(None).items;
 
     for GetApolloInstanceResult {
         chain_id,

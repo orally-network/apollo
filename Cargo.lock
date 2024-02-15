@@ -100,6 +100,7 @@ dependencies = [
  "ic-stable-structures",
  "ic-web3-rs",
  "num-bigint",
+ "paginate",
  "serde",
  "serde_json",
  "siwe",
@@ -1668,6 +1669,12 @@ name = "opaque-debug"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "624a8340c38c1b80fd549087862da4ba43e08858af025b236e509b6649fc13d5"
+
+[[package]]
+name = "paginate"
+version = "1.1.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5ac1db209d9d6dc8e4435b744ed76198494406cd20eb8ca14baf9828664664c8"
 
 [[package]]
 name = "parity-scale-codec"

@@ -5,7 +5,7 @@ use apollo_utils::{
     nat::ToNatType,
     web3,
 };
-use candid::{candid_method, Nat};
+use candid::candid_method;
 use ic_cdk::{query, update};
 
 use crate::{types::balances::Balances, utils::apollo_evm_address, NatResult, Result};

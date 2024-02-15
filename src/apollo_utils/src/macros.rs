@@ -59,11 +59,11 @@ macro_rules! retry_until_success {
         let mut attempts = 0u32;
         let mut result = $func.await;
 
-        if $chain_id  != 0 {
-            ic_utils::logger::log_message(format!("result in chain {}, retry_until_success: {:?}", $chain_id, result));
-        } else {
-            ic_utils::logger::log_message(format!("result in retry_until_success: {:?}", result));
-        }
+        // if $chain_id  != 0 {
+        //     ic_utils::logger::log_message(format!("result in chain {}, retry_until_success: {:?}", $chain_id, result));
+        // } else {
+        //     ic_utils::logger::log_message(format!("result in retry_until_success: {:?}", result));
+        // }
 
         let (func_name, func_other) = stringify!($func).rsplit_once("(").unwrap();
 

@@ -63,6 +63,14 @@ type GetApolloInstanceResult = record {
 };
 type Metadata = record { sybil_canister_address : text; key_name : text };
 type NatResult = variant { Ok : nat; Err : ApolloError };
+type Pagination = record { page : nat64; size : nat64 };
+type PaginationResult = record {
+  page : nat64;
+  total_pages : nat64;
+  size : nat64;
+  total_items : nat64;
+  items : vec GetApolloInstanceResult;
+};
 type Result = variant { Ok; Err : ApolloError };
 type StringResult = variant { Ok : text; Err : ApolloError };
 type UpdateMetadata = record {
@@ -107,7 +115,7 @@ service : (text, text) -> {
   deposit : (nat, text, text, text, text) -> (Result);
   get_ama : (nat) -> (StringResult);
   get_apollo_instance_metadata : (nat) -> (ApolloInstanceMetadataResult);
-  get_apollo_instances : () -> (vec GetApolloInstanceResult) query;
+  get_apollo_instances : (opt Pagination) -> (PaginationResult) query;
   get_balance : (nat, text) -> (NatResult);
   get_metadata : () -> (Metadata) query;
   remove_apollo_instance : (nat) -> (Result);
@@ -115,5 +123,6 @@ service : (text, text) -> {
   stop : (nat) -> (Result);
   update_apollo_instance_metadata : (nat, UpdateMetadata) -> (Result);
   update_metadata : (UpdateMetadata) -> (Result);
+  update_timer_frequency_sec : (nat, nat64) -> (Result);
   upgrade_chains : () -> (Result);
 }

@@ -8,6 +8,7 @@ pub mod macros;
 pub mod memory;
 pub mod multicall;
 pub mod nat;
+pub mod pagination;
 pub mod processors;
 pub mod siwe;
 pub mod sybil;

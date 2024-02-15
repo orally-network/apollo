@@ -31,9 +31,10 @@ fn init(sybil_canister_address: String, key_name: String) {
 // For candid file auto-generation
 pub type Result<T> = std::result::Result<T, ApolloError>;
 
-use crate::types::apollo_instance::AddApolloInstanceRequest;
+use crate::types::apollo_instance::*;
 use crate::types::custom_return_types::*;
 use apollo_utils::apollo_instance::UpdateMetadata;
+use apollo_utils::pagination::*;
 
 // Candid file auto-generation
 candid::export_service!();

@@ -19,3 +19,9 @@ pub struct AddApolloInstanceRequest {
     pub block_gas_limit: Nat,
     pub min_balance: Nat,
 }
+
+#[derive(CandidType, Serialize, Deserialize, Debug)]
+pub struct GetApolloInstancesFilter {
+    pub chain_id: Option<Nat>,
+    pub search: Option<String>,
+}
