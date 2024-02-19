@@ -83,6 +83,7 @@ type Web3Error = variant {
   UnableToGetLogs : text;
 };
 type WithdrawRequestsError = variant {
+  UtilsError : UtilsError;
   UnableToCleanWithdrawRequests : text;
   UnableToAddWithdrawRequest : text;
 };

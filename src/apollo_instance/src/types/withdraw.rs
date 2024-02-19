@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 use anyhow::Result;
 
-use apollo_utils::{errors::WithdrawRequestsError, memory::Cbor};
+use apollo_utils::{address, errors::WithdrawRequestsError, memory::Cbor};
 use candid::{CandidType, Nat};
 use ic_stable_structures::{storable::Bound, StableVec, Storable};
 use serde::{Deserialize, Serialize};
@@ -41,13 +41,15 @@ pub struct WithdrawRequests(StableVec<WithdrawRequest, VMemory>);
 
 impl Default for WithdrawRequests {
     fn default() -> Self {
-        // TODO: change to StableVec::init
-        Self(StableVec::new(crate::memory::get_withdraw_requests_memory()).unwrap())
+        Self(StableVec::init(crate::memory::get_withdraw_requests_memory()).unwrap())
     }
 }
 
 impl WithdrawRequests {
     pub fn add(from: String, receiver: String, amount: &Nat) -> Result<(), WithdrawRequestsError> {
+        let from = address::normalize(&from)?;
+        let receiver = address::normalize(&receiver)?;
+
         STATE.with(|state| {
             state
                 .borrow_mut()

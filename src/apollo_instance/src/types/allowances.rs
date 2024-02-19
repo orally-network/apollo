@@ -1,9 +1,6 @@
-use std::{
-    borrow::{Borrow, BorrowMut},
-    collections::HashMap,
-};
+use std::borrow::{Borrow, BorrowMut};
 
-use apollo_utils::log;
+use apollo_utils::{address, errors::UtilsError, log};
 use ic_stable_structures::StableBTreeMap;
 
 use crate::memory::VMemory;
@@ -21,7 +18,10 @@ impl Default for Allowances {
 }
 
 impl Allowances {
-    pub fn grant(contract: String, user: String) {
+    pub fn grant(contract: String, user: String) -> Result<(), UtilsError> {
+        let contract = address::normalize(&contract)?;
+        let user = address::normalize(&user)?;
+
         STATE.with(|state| {
             let mut state = state.borrow_mut();
             let inner = state.allowances.0.borrow_mut();
@@ -30,9 +30,14 @@ impl Allowances {
                 inner.insert(contract, user);
             }
         });
+
+        Ok(())
     }
 
-    pub fn restrict(contract: String, user: String) {
+    pub fn restrict(contract: String, user: String) -> Result<(), UtilsError> {
+        let contract = address::normalize(&contract)?;
+        let user = address::normalize(&user)?;
+
         STATE.with(|state| {
             let mut state = state.borrow_mut();
             let inner = state.allowances.0.borrow_mut();
@@ -41,15 +46,19 @@ impl Allowances {
                 inner.remove(&contract);
             }
         });
+
+        Ok(())
     }
 
     /// Returns the user's pubkey if the contract is allowed to use his balance, otherwise returns the contract's pubkey
-    pub fn get_allowed_user(contract: String) -> String {
+    pub fn get_allowed_user(contract: String) -> Result<String, UtilsError> {
+        let contract = address::normalize(&contract)?;
+
         STATE.with(|state| {
             let state = state.borrow();
             let inner = state.allowances.0.borrow();
 
-            inner.get(&contract).unwrap_or(contract)
+            Ok(inner.get(&contract).unwrap_or(contract))
         })
     }
 }

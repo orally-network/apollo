@@ -59,7 +59,7 @@ async fn process_requests<T: Transport>(
     for apollo_coordinator_request in requests {
         let balance = Balances::get(&Allowances::get_allowed_user(address::from_h160(
             &apollo_coordinator_request.requester,
-        )))?
+        ))?)?
         .amount;
 
         if balance
@@ -133,7 +133,7 @@ async fn process_requests<T: Transport>(
         let amount = gas_price.to_nat() * result.used_gas.to_nat() + get_metadata!(apollos_fee);
 
         Balances::reduce_amount(
-            &Allowances::get_allowed_user(format!("{:?}", call.target)),
+            &Allowances::get_allowed_user(format!("{:?}", call.target))?,
             &amount,
         )
         .expect("should reduce balance");

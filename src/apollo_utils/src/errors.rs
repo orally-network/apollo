@@ -150,6 +150,8 @@ pub enum WithdrawRequestsError {
     UnableToAddWithdrawRequest(String),
     #[error("Unable to clean withdraw requests: {0}")]
     UnableToCleanWithdrawRequests(String),
+    #[error("Utils error: {0}")]
+    UtilsError(#[from] UtilsError),
 }
 
 #[derive(Error, Debug, CandidType, PartialEq, Deserialize)]

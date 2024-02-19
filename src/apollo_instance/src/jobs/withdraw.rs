@@ -25,6 +25,7 @@ pub fn execute() {
 
 pub async fn withdraw() {
     let reqs = WithdrawRequests::get_all();
+
     if reqs.is_empty() {
         return;
     }

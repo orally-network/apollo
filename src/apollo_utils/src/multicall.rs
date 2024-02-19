@@ -410,6 +410,12 @@ pub async fn estimate_multitransfer<T: Transport>(
     let options = Options {
         gas_price: Some(gas_price),
         nonce: Some(nonce),
+        value: Some(
+            multitransfer_args
+                .transfers
+                .iter()
+                .fold(U256::from(0), |sum, t| sum + t.value),
+        ),
         ..Default::default()
     };
 

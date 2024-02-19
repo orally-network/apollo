@@ -20,7 +20,7 @@ use ic_cdk::update;
 pub async fn grant(address: String, msg: String, sig: String) -> Result<()> {
     let user = apollo_utils::siwe::recover(msg, sig).await;
 
-    Allowances::grant(address.clone(), user.clone());
+    Allowances::grant(address.clone(), user.clone())?;
 
     log!("[ALLOWANCE] {user} allowed {address} to use his balance");
     Ok(())
@@ -43,7 +43,7 @@ pub async fn grant(address: String, msg: String, sig: String) -> Result<()> {
 pub async fn restrict(address: String, msg: String, sig: String) -> Result<()> {
     let user = apollo_utils::siwe::recover(msg, sig).await;
 
-    Allowances::restrict(address.clone(), user.clone());
+    Allowances::restrict(address.clone(), user.clone())?;
 
     log!("[ALLOWANCE] {user} restricted {address} from using his balance");
     Ok(())

@@ -70,7 +70,7 @@ pub async fn deposit(
     Balances::add_amount(&sender, &amount)?;
 
     if let Some(contract) = allowance {
-        Allowances::grant(contract.clone(), sender.clone());
+        Allowances::grant(contract.clone(), sender.clone())?;
         log!("[ALLOWANCE] {sender} allowed {contract} to use his balance")
     }
 
@@ -85,7 +85,6 @@ pub async fn withdraw(receiver: String, msg: String, sig: String) -> Result<()> 
 
     let amount = Balances::get(&receiver).unwrap_or_default().amount;
 
-    WithdrawRequests::clean()?; // TODO: remove
     WithdrawRequests::add(address.clone(), receiver, &amount)?;
 
     if !Timer::is_active() {
