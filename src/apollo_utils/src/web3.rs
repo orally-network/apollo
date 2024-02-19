@@ -2,7 +2,10 @@ use anyhow::Result;
 use ic_cdk::api::management_canister::http_request::{TransformContext, TransformFunc};
 use ic_web3_rs::{
     api::Eth,
-    contract::{tokens::Tokenizable, Contract, Options},
+    contract::{
+        tokens::{Tokenizable, Tokenize},
+        Contract, Options,
+    },
     ethabi::Token,
     ic::KeyInfo,
     transports::{ic_http_client::CallOptionsBuilder, ICHttp},
@@ -172,7 +175,7 @@ impl<T: Transport> Web3Instance<T> {
 
     // We need to pass custom wrapper around args because ic-web3-rs doesn't parse them as
     // vec of tokens, but as a single token
-    pub async fn estimate_gas<P: Tokenizable + Clone>(
+    pub async fn estimate_gas<P: Tokenize + Clone>(
         contract: &Contract<T>,
         func: &str,
         params: P,

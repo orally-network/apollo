@@ -8,6 +8,10 @@ const UPGRADES_MEMORY_ID: MemoryId = MemoryId::new(0);
 const METADATA_MEMORY_ID: MemoryId = MemoryId::new(1);
 // A memory for balances of users
 const BALANCES_MEMORY_ID: MemoryId = MemoryId::new(2);
+// A memory for withdraw requests
+const WITHDRAW_REQUESTS_MEMORY_ID: MemoryId = MemoryId::new(3);
+// A memory for allowed contracts
+const ALLOWANCES_MEMORY_ID: MemoryId = MemoryId::new(4);
 
 pub type VMemory = VirtualMemory<DefaultMemoryImpl>;
 
@@ -28,4 +32,12 @@ pub fn get_metadata_memory() -> VMemory {
 
 pub fn get_balances_memory() -> VMemory {
     MEMORY_MANAGER.with(|m| m.borrow().get(BALANCES_MEMORY_ID))
+}
+
+pub fn get_withdraw_requests_memory() -> VMemory {
+    MEMORY_MANAGER.with(|m| m.borrow().get(WITHDRAW_REQUESTS_MEMORY_ID))
+}
+
+pub fn get_allowances_memory() -> VMemory {
+    MEMORY_MANAGER.with(|m| m.borrow().get(ALLOWANCES_MEMORY_ID))
 }

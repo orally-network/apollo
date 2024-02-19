@@ -1,6 +1,7 @@
 type ApolloInstanceError = variant {
   FailedToUpgrade : text;
   FailedToStop : text;
+  WithdrawRequestsError : WithdrawRequestsError;
   BalancesError : BalancesError;
   FailedToUpdateSettings : text;
   UtilsError : UtilsError;
@@ -81,14 +82,21 @@ type Web3Error = variant {
   InvalidAddressFormat : text;
   UnableToGetLogs : text;
 };
+type WithdrawRequestsError = variant {
+  UnableToCleanWithdrawRequests : text;
+  UnableToAddWithdrawRequest : text;
+};
 service : (ApolloInstanceInit) -> {
-  deposit : (text, text, text, text) -> (Result);
+  deposit : (text, opt text, text, text) -> (Result);
   get_apollo_address : () -> (Result_1);
   get_balance : (text) -> (Result_2) query;
   get_metadata : () -> (ApolloInstanceMetadata) query;
+  grant : (text, text, text) -> (Result);
+  restrict : (text, text, text) -> (Result);
   start : () -> (Result);
   stop : () -> (Result);
   update_last_request_id : (opt nat64) -> (Result);
   update_metadata : (UpdateMetadata) -> (Result);
   update_timer_frequency_sec : (nat64) -> (Result);
+  withdraw : (text, text, text) -> (Result);
 }

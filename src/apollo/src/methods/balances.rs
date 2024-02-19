@@ -11,7 +11,7 @@ use crate::{NatResult, Result};
 ///
 /// * `chain_id` - Unique identifier of the chain, for example Ethereum Mainnet is 1
 /// * `tx_hash` - Hash of the transaction, where funds were transfered to the AMA
-/// * `address` - Address of the user, where to deposit funds
+/// * `allowance` - Address of the contract, to whom grand permission to use funds
 /// * `msg` - SIWE message, For more information, refer to the [SIWE message specification](https://eips.ethereum.org/EIPS/eip-4361)
 /// * `sig` - SIWE signature, For more information, refer to the [SIWE message specification](https://eips.ethereum.org/EIPS/eip-4361)
 ///
@@ -23,7 +23,7 @@ use crate::{NatResult, Result};
 pub async fn deposit(
     chain_id: Nat,
     tx_hash: String,
-    address: String,
+    allowance: Option<String>,
     msg: String,
     sig: String,
 ) -> Result<()> {
@@ -33,7 +33,7 @@ pub async fn deposit(
         retry_until_success!(ic_cdk::call(
             apollo_instance.canister_id,
             "deposit",
-            (tx_hash.clone(), address.clone(), msg.clone(), sig.clone())
+            (tx_hash.clone(), allowance.clone(), msg.clone(), sig.clone())
         ))
         .map_err(|(_, msg)| ApolloError::CommunicationWithApolloInstanceFailed(msg))?;
 
@@ -71,4 +71,20 @@ pub async fn get_balance(chain_id: Nat, address: String) -> NatResult {
         Ok(balance) => NatResult::Ok(balance),
         Err(err) => NatResult::Err(err),
     }
+}
+
+#[candid_method]
+#[update]
+pub async fn withdraw(chain_id: Nat, receiver: String, msg: String, sig: String) -> Result<()> {
+    let apollo_instance = crate::get_apollo_instance!(chain_id);
+
+    let (result,): (std::result::Result<(), ApolloInstanceError>,) =
+        retry_until_success!(ic_cdk::call(
+            apollo_instance.canister_id,
+            "withdraw",
+            (receiver.clone(), msg.clone(), sig.clone())
+        ))
+        .map_err(|(_, msg)| ApolloError::CommunicationWithApolloInstanceFailed(msg))?;
+
+    Ok(result?)
 }

@@ -8,7 +8,12 @@ use apollo_utils::{
 use candid::candid_method;
 use ic_cdk::{query, update};
 
-use crate::{types::balances::Balances, utils::apollo_evm_address, NatResult, Result};
+use crate::{
+    jobs::withdraw,
+    types::{allowances::Allowances, balances::Balances, timer::Timer, withdraw::WithdrawRequests},
+    utils::apollo_evm_address,
+    NatResult, Result,
+};
 
 /// Get balance of the user
 ///
@@ -29,7 +34,7 @@ pub fn get_balance(address: String) -> NatResult {
 /// # Arguments
 ///
 /// * `tx_hash` - Hash of the transaction, where funds were transfered to the AMA
-/// * `address` - Address of the user, where to deposit funds
+/// * `allowance` - Address of the contract, to whom grand permission to use funds
 /// * `msg` - SIWE message, For more information, refer to the [SIWE message specification](https://eips.ethereum.org/EIPS/eip-4361)
 /// * `sig` - SIWE signature, For more information, refer to the [SIWE message specification](https://eips.ethereum.org/EIPS/eip-4361)
 ///
@@ -38,7 +43,12 @@ pub fn get_balance(address: String) -> NatResult {
 /// Returns a result that can contain an error message
 #[candid_method]
 #[update]
-pub async fn deposit(tx_hash: String, address: String, msg: String, sig: String) -> Result<()> {
+pub async fn deposit(
+    tx_hash: String,
+    allowance: Option<String>,
+    msg: String,
+    sig: String,
+) -> Result<()> {
     let sender = apollo_utils::siwe::recover(msg, sig).await;
 
     let w3 = web3::instance(&get_metadata!(chain_rpc))?;
@@ -57,8 +67,32 @@ pub async fn deposit(tx_hash: String, address: String, msg: String, sig: String)
 
     let amount = tx.value.to_nat();
 
-    Balances::add_amount(&address, &amount)?;
+    Balances::add_amount(&sender, &amount)?;
+
+    if let Some(contract) = allowance {
+        Allowances::grant(contract.clone(), sender.clone());
+        log!("[ALLOWANCE] {sender} allowed {contract} to use his balance")
+    }
 
     log!("[BALANCES] {sender} deposited amount {amount}");
+    Ok(())
+}
+
+#[candid_method]
+#[update]
+pub async fn withdraw(receiver: String, msg: String, sig: String) -> Result<()> {
+    let address = apollo_utils::siwe::recover(msg, sig).await;
+
+    let amount = Balances::get(&receiver).unwrap_or_default().amount;
+
+    WithdrawRequests::clean()?; // TODO: remove
+    WithdrawRequests::add(address.clone(), receiver, &amount)?;
+
+    if !Timer::is_active() {
+        withdraw::execute();
+    }
+
+    log!("[BALANCES] {address} withdrawed amount {amount}");
+
     Ok(())
 }

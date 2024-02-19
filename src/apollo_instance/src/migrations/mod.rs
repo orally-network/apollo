@@ -17,7 +17,7 @@ use crate::{
 // A pre-upgrade hook for serializing the data stored on the heap.
 #[pre_upgrade]
 fn pre_upgrade() {
-    save_upgrade_data()
+    save_upgrade_data();
 }
 
 // A post-upgrade hook for deserializing the data back into the heap.

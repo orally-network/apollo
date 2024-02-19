@@ -24,6 +24,7 @@ type ApolloInstance = record {
 type ApolloInstanceError = variant {
   FailedToUpgrade : text;
   FailedToStop : text;
+  WithdrawRequestsError : WithdrawRequestsError;
   BalancesError : BalancesError;
   FailedToUpdateSettings : text;
   UtilsError : UtilsError;
@@ -109,20 +110,27 @@ type Web3Error = variant {
   InvalidAddressFormat : text;
   UnableToGetLogs : text;
 };
+type WithdrawRequestsError = variant {
+  UnableToCleanWithdrawRequests : text;
+  UnableToAddWithdrawRequest : text;
+};
 service : (text, text) -> {
   add_apollo_instance : (AddApolloInstanceRequest) -> (Result);
   add_apollo_instances_manually : (vec ApolloInstance) -> (Result);
-  deposit : (nat, text, text, text, text) -> (Result);
+  deposit : (nat, text, opt text, text, text) -> (Result);
   get_ama : (nat) -> (StringResult);
   get_apollo_instance_metadata : (nat) -> (ApolloInstanceMetadataResult);
   get_apollo_instances : (opt Pagination) -> (PaginationResult) query;
   get_balance : (nat, text) -> (NatResult);
   get_metadata : () -> (Metadata) query;
+  grant : (nat, text, text, text) -> (Result);
   remove_apollo_instance : (nat) -> (Result);
+  restrict : (nat, text, text, text) -> (Result);
   start : (nat) -> (Result);
   stop : (nat) -> (Result);
   update_apollo_instance_metadata : (nat, UpdateMetadata) -> (Result);
   update_metadata : (UpdateMetadata) -> (Result);
   update_timer_frequency_sec : (nat, nat64) -> (Result);
   upgrade_chains : () -> (Result);
+  withdraw : (nat, text, text, text) -> (Result);
 }

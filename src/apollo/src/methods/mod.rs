@@ -1,3 +1,4 @@
+mod allowances;
 mod apollo_instance_canister;
 mod balances;
 pub mod canister;

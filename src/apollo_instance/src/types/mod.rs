@@ -11,10 +11,12 @@ use serde::{Deserialize, Serialize};
 
 use crate::memory::VMemory;
 
-use self::{balances::Balances, timer::Timer};
+use self::{allowances::Allowances, balances::Balances, timer::Timer, withdraw::WithdrawRequests};
 
+pub mod allowances;
 pub mod balances;
 pub mod timer;
+pub mod withdraw;
 
 #[derive(Serialize, Deserialize)]
 pub struct State {
@@ -23,6 +25,12 @@ pub struct State {
 
     #[serde(skip)]
     pub balances: Balances,
+
+    #[serde(skip)]
+    pub withdraw_requests: WithdrawRequests,
+
+    #[serde(skip)]
+    pub allowances: Allowances,
 
     // Frequency in seconds to check apollo coordinator for new requests
     pub timer_frequency_sec: u64,
@@ -47,6 +55,8 @@ impl Default for State {
         Self {
             metadata: init_metadata(),
             balances: Balances::default(),
+            withdraw_requests: WithdrawRequests::default(),
+            allowances: Allowances::default(),
             timer_frequency_sec: 0,
             timer: Timer::default(),
             last_request_id: None,

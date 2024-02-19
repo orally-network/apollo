@@ -1,12 +1,6 @@
 use std::borrow::{Borrow, BorrowMut};
 
-use apollo_utils::{
-    address,
-    errors::BalancesError,
-    get_metadata, log,
-    memory::Cbor,
-    multicall::{BASE_GAS, GAS_PER_TRANSFER},
-};
+use apollo_utils::{address, errors::BalancesError, get_metadata, log, memory::Cbor};
 use candid::{CandidType, Nat};
 
 use anyhow::Result;
@@ -17,8 +11,6 @@ use crate::memory::VMemory;
 
 use super::STATE;
 
-const ETH_TRANSFER_GAS_LIMIT: u64 = BASE_GAS + GAS_PER_TRANSFER; // TODO: recheck this value, calculate from actual tx
-
 #[derive(Clone, Debug, Default, CandidType, Serialize, Deserialize)]
 pub struct UserBalance {
     pub amount: Nat,
@@ -28,8 +20,6 @@ pub struct UserBalance {
 /// chain id => user's public key => PUB (Pythia User Balance)
 pub struct Balances(StableBTreeMap<String, Cbor<UserBalance>, VMemory>);
 
-// pub struct Balances(StableCell<Cbor<HashMap<String, UserBalance>>, VMemory>);
-
 impl Default for Balances {
     fn default() -> Self {
         Self(StableBTreeMap::init(crate::memory::get_balances_memory()))
@@ -37,23 +27,6 @@ impl Default for Balances {
 }
 
 impl Balances {
-    pub fn get_value_for_withdraw(address: &str, gas_price: &Nat) -> Result<Nat> {
-        STATE.with(|state| {
-            let mut state = state.borrow_mut();
-            // let balances = state.balances.get().0;
-            // let balance = balances.0.get_mut(chain_id).;
-            todo!()
-
-            // let gas = Nat::from(ETH_TRANSFER_GAS_LIMIT) * gas_price.clone();
-            // if balance.amount < gas {
-            //     return Err(anyhow!("not enough funds to pay for gas"));
-            // }
-            // let value = balance.amount.clone() - gas;
-            // balance.amount = Nat::from(0);
-            // Ok(value)
-        })
-    }
-
     pub fn save_nonce(address: &str, nonce: &Nat) -> Result<(), BalancesError> {
         let address = address::normalize(address)?;
         STATE.with(|state| {
@@ -139,6 +112,7 @@ impl Balances {
         })
     }
 
+    // TODO: use is_sufficient
     pub fn is_sufficient(address: &str, amount: &Nat) -> Result<bool> {
         let address = address::normalize(address)?;
 

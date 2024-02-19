@@ -10,7 +10,7 @@ use apollo_utils::{
 use ic_web3_rs::{ethabi::Function, types::U256, Transport};
 
 use crate::{
-    types::{balances::Balances, timer::Timer, ApolloCoordinatorRequest},
+    types::{allowances::Allowances, balances::Balances, timer::Timer, ApolloCoordinatorRequest},
     utils::apollo_evm_address,
 };
 
@@ -18,6 +18,7 @@ use anyhow::Result;
 
 pub mod apollo_coordinator_polling;
 mod logs_polling;
+pub mod withdraw;
 
 const TARGET_FUNCTION_ABI: &str = include_str!("../../../../assets/TargetFunctionABI.json");
 
@@ -36,6 +37,8 @@ pub fn execute() {
         }
 
         Timer::set_timer(execute);
+
+        withdraw::execute();
     });
 }
 
@@ -54,8 +57,12 @@ async fn process_requests<T: Transport>(
     let mut calls = Vec::with_capacity(requests.len());
 
     for apollo_coordinator_request in requests {
-        // TODO: implement balance check
-        if Balances::get(&address::from_h160(&apollo_coordinator_request.requester))?.amount
+        let balance = Balances::get(&Allowances::get_allowed_user(address::from_h160(
+            &apollo_coordinator_request.requester,
+        )))?
+        .amount;
+
+        if balance
             < get_metadata!(min_balance)
                 + apollo_coordinator_request.callback_gas_limit.to_nat()
                 + get_metadata!(apollos_fee)
@@ -68,7 +75,7 @@ async fn process_requests<T: Transport>(
                 apollo_coordinator_request.callback_gas_limit,
                 get_metadata!(apollos_fee),
                 get_metadata!(min_balance) + apollo_coordinator_request.callback_gas_limit.to_nat() + get_metadata!(apollos_fee),
-                Balances::get(&address::from_h160(&apollo_coordinator_request.requester))?.amount
+                balance
             );
 
             continue;
@@ -125,8 +132,11 @@ async fn process_requests<T: Transport>(
 
         let amount = gas_price.to_nat() * result.used_gas.to_nat() + get_metadata!(apollos_fee);
 
-        Balances::reduce_amount(&format!("{:?}", call.target), &amount)
-            .expect("should reduce balance");
+        Balances::reduce_amount(
+            &Allowances::get_allowed_user(format!("{:?}", call.target)),
+            &amount,
+        )
+        .expect("should reduce balance");
     }
 
     Ok(())

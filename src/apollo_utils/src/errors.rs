@@ -36,6 +36,8 @@ pub enum ApolloInstanceError {
     UtilsError(#[from] UtilsError),
     #[error("Balances error: {0}")]
     BalancesError(#[from] BalancesError),
+    #[error("WithdrawRequests error: {0}")]
+    WithdrawRequestsError(#[from] WithdrawRequestsError),
     #[error("Web3 error: {0}")]
     Web3Error(#[from] Web3Error),
     #[error("Tx was not sent to Apollo main address")]
@@ -140,6 +142,14 @@ pub enum BalancesError {
     UtilsError(#[from] UtilsError),
     #[error("Not enough funds")]
     NotEnoughFunds,
+}
+
+#[derive(Error, Debug, CandidType, PartialEq, Deserialize)]
+pub enum WithdrawRequestsError {
+    #[error("Unable to add withdraw request: {0}")]
+    UnableToAddWithdrawRequest(String),
+    #[error("Unable to clean withdraw requests: {0}")]
+    UnableToCleanWithdrawRequests(String),
 }
 
 #[derive(Error, Debug, CandidType, PartialEq, Deserialize)]

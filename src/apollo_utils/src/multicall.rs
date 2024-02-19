@@ -102,6 +102,7 @@ impl Tokenizable for MulticallResult {
 pub struct Transfer {
     pub target: H160,
     pub value: U256,
+    pub from: String,
 }
 
 impl Tokenizable for Transfer {
@@ -117,7 +118,11 @@ impl Tokenizable for Transfer {
             if let (Token::Address(target), Token::Uint(value)) =
                 (tokens[0].clone(), tokens[1].clone())
             {
-                return Ok(Self { target, value });
+                return Ok(Self {
+                    target,
+                    value,
+                    from: "".into(),
+                });
             }
         }
 
@@ -131,7 +136,37 @@ impl Tokenizable for Transfer {
 
 #[derive(Debug, Clone, Default)]
 pub struct MultitransferArgs {
-    transfers: Vec<Transfer>,
+    pub transfers: Vec<Transfer>,
+}
+
+impl MultitransferArgs {
+    pub fn new(transfers: Vec<Transfer>) -> Self {
+        MultitransferArgs { transfers }
+    }
+
+    pub fn retain_sufficient(&mut self, fee_cost: U256) {
+        loop {
+            let transfers_len = self.transfers.len();
+            let fee_cost_per_transfer = fee_cost / transfers_len;
+
+            self.transfers.retain(|t| {
+                if t.value < fee_cost_per_transfer {
+                    log!(
+                        "Transfer to {}, value: {} dropped due to insufficient balance",
+                        t.target,
+                        t.value
+                    );
+                    false
+                } else {
+                    true
+                }
+            });
+
+            if self.transfers.len() == transfers_len {
+                break;
+            }
+        }
+    }
 }
 
 impl Tokenizable for MultitransferArgs {
@@ -359,9 +394,40 @@ fn get_current_calls_batch(calls: &[Call], block_gas_limit: U256) -> (Vec<Call>,
     (calls.to_vec(), vec![])
 }
 
+pub async fn estimate_multitransfer<T: Transport>(
+    w3: &Web3Instance<T>,
+    gas_price: U256,
+    multitransfer_args: MultitransferArgs,
+    multicall_address: &str,
+    from: String,
+) -> Result<U256, MulticallError> {
+    let contract_addr = address::to_h160(multicall_address)?;
+    let contract = Contract::from_json(w3.eth(), contract_addr, MULTICALL_ABI)
+        .map_err(|err| Web3Error::UnableToCreateContract(err.to_string()))?;
+
+    let nonce = w3.get_nonce(&from).await?;
+
+    let options = Options {
+        gas_price: Some(gas_price),
+        nonce: Some(nonce),
+        ..Default::default()
+    };
+
+    Ok(Web3Instance::estimate_gas(
+        &contract,
+        &MULTICALL_TRANSFER_FUNCTION,
+        multitransfer_args.clone(),
+        &from,
+        &options,
+    )
+    .await?)
+}
+
 // TODO: reread this function and make sure it's correct
 pub async fn multitransfer<T: Transport>(
     w3: &Web3Instance<T>,
+    gas_price: U256,
+    estimated_gas: U256,
     chain_id: u64,
     multitransfer_args: MultitransferArgs,
     multicall_address: &str,
@@ -374,34 +440,20 @@ pub async fn multitransfer<T: Transport>(
 
     let params = vec![multitransfer_args.clone().into_token()];
 
-    let gas_price = w3.get_gas_price().await?;
-    let value = multitransfer_args
-        .transfers
-        .iter()
-        .fold(U256::from(0), |sum, t| sum + t.value);
-
-    let transfers_len = multitransfer_args.transfers.len();
-
     let nonce = w3.get_nonce(&from).await?;
 
-    let mut options = Options {
+    let options = Options {
         gas_price: Some(gas_price),
-        value: Some(value),
+        gas: Some(estimated_gas),
         nonce: Some(nonce),
+        value: Some(
+            multitransfer_args
+                .transfers
+                .iter()
+                .fold(U256::from(0), |sum, t| sum + t.value),
+        ),
         ..Default::default()
     };
-
-    let gas_limit = Web3Instance::estimate_gas(
-        &contract,
-        &MULTICALL_TRANSFER_FUNCTION,
-        multitransfer_args,
-        &from,
-        &options,
-    )
-    .await?;
-
-    options.value = Some(value - (gas_limit / transfers_len) * gas_price);
-    options.gas = Some(gas_limit);
 
     let signed_call = w3
         .sign(
@@ -417,7 +469,8 @@ pub async fn multitransfer<T: Transport>(
 
     log!("[Multitransfer] tx send, chain_id: {}", chain_id);
 
-    w3.send_raw_transaction_and_wait(signed_call).await?;
+    let tx = w3.send_raw_transaction_and_wait(signed_call).await?;
+    log!("TX: {:?}", tx.transaction_hash);
 
     log!("[Multitransfer] tx received, chain_id: {}", chain_id);
 
