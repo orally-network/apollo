@@ -1,4 +1,5 @@
 use anyhow::Result;
+use candid::Principal;
 use ic_cdk::api::management_canister::http_request::{TransformContext, TransformFunc};
 use ic_web3_rs::{
     api::Eth,
@@ -8,7 +9,7 @@ use ic_web3_rs::{
     },
     ethabi::Token,
     ic::KeyInfo,
-    transports::{ic_http_client::CallOptionsBuilder, ICHttp},
+    transports::ic_http_client::CallOptionsBuilder,
     types::{
         BlockId, BlockNumber, Bytes, CallRequest, FilterBuilder, Log, SignedTransaction,
         Transaction, TransactionId, TransactionReceipt, H160, H256, U256, U64,
@@ -22,20 +23,34 @@ use crate::{
     http, log, retry_until_success, time,
 };
 
+use self::evm_canister_transport::EVMCanisterTransport;
+
 const ECDSA_SIGN_CYCLES: u64 = 23_000_000_000;
 pub const TRANSFER_GAS_LIMIT: u64 = 21_000;
 const TX_SUCCESS_STATUS: u64 = 1;
 const TX_WAIT_DELAY: Duration = Duration::from_secs(3);
 const TX_WAITING_TIMEOUT: u64 = 60 * 5;
 
+mod evm_canister_transport;
+
 pub struct Web3Instance<T: Transport> {
     w3: Web3<T>,
 }
 
-pub fn instance(rpc: &str) -> Result<Web3Instance<ICHttp>, Web3Error> {
-    Ok(Web3Instance::new(Web3::new(
-        ICHttp::new(rpc, None).expect("should be able to create http transport"),
-    )))
+pub fn instance(
+    rpc_url: String,
+    evm_rpc_canister: String,
+) -> Result<Web3Instance<impl Transport>, Web3Error> {
+    // Switch between EVMCanisterTransport(calls go through emv_rpc canister) and ICHttp (calls go straight to the rpc)
+
+    Ok(Web3Instance::new(Web3::new(EVMCanisterTransport::new(
+        rpc_url,
+        Principal::from_str(&evm_rpc_canister).expect("should be a valid principal"),
+    ))))
+
+    // Ok(Web3Instance::new(Web3::new(
+    //     ICHttp::new(&rpc_url, None).unwrap(),
+    // )))
 }
 
 impl<T: Transport> Web3Instance<T> {
@@ -261,14 +276,23 @@ impl<T: Transport> Web3Instance<T> {
         Ok(nonce)
     }
 
-    pub async fn send_raw_transaction_and_wait(
+    pub async fn send_raw_transaction(
         &self,
         signed_call: SignedTransaction,
-    ) -> Result<TransactionReceipt, Web3Error> {
+    ) -> Result<H256, Web3Error> {
         let tx_hash = retry_until_success!(self
             .eth()
             .send_raw_transaction(signed_call.raw_transaction.clone(), http::transform_ctx()))
         .map_err(|err| Web3Error::UnableToExecuteRawTx(err.to_string()))?;
+
+        Ok(tx_hash)
+    }
+
+    pub async fn send_raw_transaction_and_wait(
+        &self,
+        signed_call: SignedTransaction,
+    ) -> Result<TransactionReceipt, Web3Error> {
+        let tx_hash = self.send_raw_transaction(signed_call).await?;
 
         self.wait_for_success_confirmation(tx_hash).await
     }

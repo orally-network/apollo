@@ -9,6 +9,7 @@ type ApolloInstanceError = variant {
   FailedToInstallCode : text;
   ApolloCoordinatorPoolingError : text;
   FailedToDelete : text;
+  FailedToRestartTimer : text;
   FailedToCreate : text;
   TxWasNotSentToAMA;
 };
@@ -23,6 +24,7 @@ type ApolloInstanceInit = record {
   min_balance : nat;
   timer_frequency_sec : nat64;
   apollos_fee : nat;
+  evm_rpc_canister : text;
 };
 type ApolloInstanceMetadata = record {
   sybil_canister_address : text;
@@ -35,6 +37,7 @@ type ApolloInstanceMetadata = record {
   block_gas_limit : nat;
   min_balance : nat;
   apollos_fee : nat;
+  evm_rpc_canister : text;
 };
 type BalancesError = variant {
   NotEnoughFunds;
@@ -55,6 +58,7 @@ type UpdateMetadata = record {
   block_gas_limit : opt nat;
   min_balance : opt nat;
   apollos_fee : opt nat;
+  evm_rpc_canister : opt text;
 };
 type UtilsError = variant {
   FromHexError : text;
@@ -96,7 +100,7 @@ service : (ApolloInstanceInit) -> {
   restrict : (text, text, text) -> (Result);
   start : () -> (Result);
   stop : () -> (Result);
-  update_last_request_id : (opt nat64) -> (Result);
+  update_last_parsed_logs_from_block : (opt nat64) -> (Result);
   update_metadata : (UpdateMetadata) -> (Result);
   update_timer_frequency_sec : (nat64) -> (Result);
   withdraw : (text, text, text) -> (Result);

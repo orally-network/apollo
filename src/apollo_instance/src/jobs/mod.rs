@@ -16,7 +16,6 @@ use crate::{
 
 use anyhow::Result;
 
-pub mod apollo_coordinator_polling;
 mod logs_polling;
 pub mod withdraw;
 
@@ -36,7 +35,7 @@ pub fn execute() {
             log!("Publisher job executed successfully");
         }
 
-        Timer::set_timer(execute);
+        // Timer::set_timer(execute);
 
         withdraw::execute();
     });

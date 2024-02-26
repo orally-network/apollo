@@ -5,5 +5,8 @@
   },
   "apollo_instance": {
     "local": "a3shf-5eaaa-aaaaa-qaafa-cai"
+  },
+  "evm_rpc": {
+    "local": "ajuq4-ruaaa-aaaaa-qaaga-cai"
   }
 }

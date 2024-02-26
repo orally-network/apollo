@@ -1,6 +1,6 @@
 use std::borrow::{Borrow, BorrowMut};
 
-use apollo_utils::{address, errors::UtilsError, log};
+use apollo_utils::{address, errors::UtilsError};
 use ic_stable_structures::StableBTreeMap;
 
 use crate::memory::VMemory;

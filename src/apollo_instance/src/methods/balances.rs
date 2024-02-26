@@ -51,7 +51,7 @@ pub async fn deposit(
 ) -> Result<()> {
     let sender = apollo_utils::siwe::recover(msg, sig).await;
 
-    let w3 = web3::instance(&get_metadata!(chain_rpc))?;
+    let w3 = web3::instance(get_metadata!(chain_rpc), get_metadata!(evm_rpc_canister))?;
 
     let tx = w3.get_tx(&tx_hash).await?;
 

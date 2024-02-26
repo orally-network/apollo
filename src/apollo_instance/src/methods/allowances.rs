@@ -1,5 +1,5 @@
 use crate::{types::allowances::Allowances, Result};
-use apollo_utils::log;
+use apollo_utils::{address, log};
 use candid::candid_method;
 use ic_cdk::update;
 
@@ -18,7 +18,7 @@ use ic_cdk::update;
 #[candid_method]
 #[update]
 pub async fn grant(address: String, msg: String, sig: String) -> Result<()> {
-    let user = apollo_utils::siwe::recover(msg, sig).await;
+    let user = address::normalize(&apollo_utils::siwe::recover(msg, sig).await)?;
 
     Allowances::grant(address.clone(), user.clone())?;
 

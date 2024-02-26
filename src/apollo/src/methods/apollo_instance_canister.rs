@@ -54,6 +54,26 @@ async fn update_apollo_instance_metadata(
 
 #[candid_method]
 #[update]
+async fn update_last_parsed_logs_from_block(
+    chain_id: Nat,
+    block_number: Option<u64>,
+) -> Result<()> {
+    validate_caller()?;
+    let apollo_instance = crate::get_apollo_instance!(chain_id);
+
+    let (result,): (std::result::Result<(), ApolloInstanceError>,) =
+        retry_until_success!(ic_cdk::call(
+            apollo_instance.canister_id,
+            "update_last_parsed_logs_from_block",
+            (block_number.clone(),)
+        ))
+        .map_err(|(_, msg)| ApolloError::CommunicationWithApolloInstanceFailed(msg))?;
+
+    Ok(result?)
+}
+
+#[candid_method]
+#[update]
 async fn update_timer_frequency_sec(chain_id: Nat, timer_frequency_sec: u64) -> Result<()> {
     validate_caller()?;
     let apollo_instance = crate::get_apollo_instance!(chain_id);
