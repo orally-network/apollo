@@ -1,7 +1,9 @@
+use std::str::FromStr;
+
 use ic_web3_rs::{
     contract::{tokens::Tokenizable, Contract, Error, Options},
-    ethabi::Token,
-    types::{H160, U256},
+    ethabi::{self, Event, RawLog, Token},
+    types::{H160, H256, U256},
     Transport,
 };
 
@@ -15,6 +17,9 @@ use crate::{
 const MULTICALL_ABI: &[u8] = include_bytes!("../../../assets/MulticallABI.json");
 const MULTICALL_CALL_FUNCTION: &str = "multicall";
 const MULTICALL_TRANSFER_FUNCTION: &str = "multitransfer";
+const MULTICALL_EXECUTED_TOPIC: &str =
+    "0xf8bdf3986d2670f09fe23c388ce864efb28f948b773dcf51e3839f6262c2cb4f";
+const MULTICALL_EXECUTED_EVENT_NAME: &str = "MulticallExecuted";
 pub const BASE_GAS: u64 = 27_000;
 const GAS_FOR_OPS: u64 = 10_000;
 pub const GAS_PER_TRANSFER: u64 = 7_900;
@@ -242,28 +247,28 @@ pub async fn multicall<T: Transport>(
     let contract = Contract::from_json(w3.eth(), contract_addr, MULTICALL_ABI)
         .map_err(|err| Web3Error::UnableToCreateContract(err.to_string()))?;
 
+    let multicall_abi = ethabi::Contract::load(MULTICALL_ABI).unwrap();
+
+    let event = multicall_abi
+        .event(MULTICALL_EXECUTED_EVENT_NAME)
+        .expect("should be able to get event by name");
+
     while !calls.is_empty() {
         let (current_calls_batch, _calls) = get_current_calls_batch(&calls, block_gas_limit);
         calls = _calls;
 
-        let results = execute_multicall_batch(
-            w3,
-            from.clone(),
-            &gas_price,
-            &contract,
-            MulticallArgs::new(current_calls_batch),
-            chain_id,
-            key_name.clone(),
-        )
-        .await?;
-
         result.append(
-            &mut results
-                .iter()
-                .map(|token| {
-                    MulticallResult::from_token(token.clone()).expect("failed to decode from token")
-                })
-                .collect::<Vec<MulticallResult>>(),
+            &mut execute_multicall_batch(
+                w3,
+                from.clone(),
+                &gas_price,
+                &contract,
+                MulticallArgs::new(current_calls_batch),
+                chain_id,
+                key_name.clone(),
+                event,
+            )
+            .await?,
         );
     }
 
@@ -278,7 +283,8 @@ async fn execute_multicall_batch<T: Transport>(
     multicall_args: MulticallArgs,
     chain_id: u64,
     key_name: String,
-) -> Result<Vec<Token>, MulticallError> {
+    event: &Event,
+) -> Result<Vec<MulticallResult>, MulticallError> {
     log!(
         "[MULTICALL] chain: {}, multicall batch started, calls: {}",
         chain_id,
@@ -363,23 +369,42 @@ async fn execute_multicall_batch<T: Transport>(
 
     log!("[MULTICALL] chain: {}, tx was executed", chain_id);
 
-    let call_result = w3
-        .get_call_result(
-            contract,
-            MULTICALL_CALL_FUNCTION,
-            &params,
-            tx_hash.from,
-            tx_hash.to,
-            tx_hash.block_number,
+    let logs = w3
+        .get_logs(
+            tx_hash.block_number.expect("should be present").as_u64(),
+            Some(tx_hash.block_number.expect("should be present").as_u64()),
+            Some(H256::from_str(MULTICALL_EXECUTED_TOPIC).expect("should be able to parse")),
+            Some(contract.address()),
         )
         .await?;
 
-    let token = call_result.first().ok_or(MulticallError::EmptyResponse)?;
+    let mut multicall_results = Vec::new();
 
-    token
-        .clone()
-        .into_array()
-        .ok_or(MulticallError::ResponseIsNotAnArray(token.to_string()).into())
+    for log in logs {
+        let raw_log = RawLog {
+            topics: log.topics,
+            data: log.data.0,
+        };
+
+        let parsed_log = event
+            .parse_log(raw_log)
+            .map_err(|err| MulticallError::AbiParsingError(err.to_string()))?;
+
+        for param in parsed_log.params {
+            for multicall_result_token in param
+                .value
+                .into_array()
+                .ok_or(MulticallError::InvalidMulticallResult)?
+            {
+                multicall_results.push(
+                    MulticallResult::from_token(multicall_result_token)
+                        .map_err(|err| MulticallError::FailedToParseFromLog(err.to_string()))?,
+                );
+            }
+        }
+    }
+
+    Ok(multicall_results)
 }
 
 fn get_current_calls_batch(calls: &[Call], block_gas_limit: U256) -> (Vec<Call>, Vec<Call>) {

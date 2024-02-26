@@ -111,20 +111,6 @@ impl Balances {
                 .unwrap_or_default())
         })
     }
-
-    // TODO: use is_sufficient
-    pub fn is_sufficient(address: &str, amount: &Nat) -> Result<bool> {
-        let address = address::normalize(address)?;
-
-        let balance = STATE.with(|state| {
-            let state = state.borrow();
-            let inner = state.balances.0.borrow();
-
-            inner.get(&address).unwrap_or_default()
-        });
-
-        Ok(&balance.amount >= amount)
-    }
 }
 
 #[cfg(test)]

@@ -124,6 +124,7 @@ async fn add_apollo_instance(req: AddApolloInstanceRequest) -> Result<()> {
         timer_frequency_sec: req.timer_frequency_sec,
         block_gas_limit: req.block_gas_limit,
         sybil_canister_address: get_metadata!(sybil_canister_address),
+        evm_rpc_canister: req.evm_rpc_canister,
         min_balance: req.min_balance,
     },);
 

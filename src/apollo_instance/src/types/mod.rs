@@ -35,8 +35,6 @@ pub struct State {
     // Frequency in seconds to check apollo coordinator for new requests
     pub timer_frequency_sec: u64,
     pub timer: Timer,
-    // last request id for apollo_coordinator_polling
-    pub last_request_id: Option<u64>,
     // last parsed block for logs_polling
     pub last_parsed_logs_from_block: Option<u64>,
 }
@@ -59,7 +57,6 @@ impl Default for State {
             allowances: Allowances::default(),
             timer_frequency_sec: 0,
             timer: Timer::default(),
-            last_request_id: None,
             last_parsed_logs_from_block: None,
         }
     }
@@ -67,7 +64,6 @@ impl Default for State {
 
 #[derive(Debug, Clone, Default)]
 pub struct ApolloCoordinatorRequest {
-    pub request_id: U256,
     pub feed_id: String,
     pub callback_gas_limit: U256,
     pub requester: H160,
@@ -77,16 +73,8 @@ impl From<Log> for ApolloCoordinatorRequest {
     fn from(log: Log) -> Self {
         let params = log.params;
 
-        let request_id = params
-            .get(0)
-            .expect("should be able to get request_id from log")
-            .value
-            .clone()
-            .into_uint()
-            .expect("should be able to convert to uint");
-
         let feed_id = params
-            .get(1)
+            .get(0)
             .expect("should be able to get feed_id from log")
             .value
             .clone()
@@ -94,7 +82,7 @@ impl From<Log> for ApolloCoordinatorRequest {
             .expect("should be able to convert to string");
 
         let callback_gas_limit = params
-            .get(2)
+            .get(1)
             .expect("should be able to get callback_gas_limit from log")
             .value
             .clone()
@@ -102,7 +90,7 @@ impl From<Log> for ApolloCoordinatorRequest {
             .expect("should be able to convert to uint");
 
         let requester = params
-            .get(3)
+            .get(2)
             .expect("should be able to get requester from log")
             .value
             .clone()
@@ -110,7 +98,6 @@ impl From<Log> for ApolloCoordinatorRequest {
             .expect("should be able to convert to address");
 
         Self {
-            request_id,
             feed_id,
             callback_gas_limit,
             requester,
@@ -124,14 +111,13 @@ impl Tokenizable for ApolloCoordinatorRequest {
         Self: Sized,
     {
         if let Token::Tuple(tokens) = token {
-            if tokens.len() != 4 {
+            if tokens.len() != 3 {
                 return Err(Error::InvalidOutputType("invalid tokens number".into()));
             }
-            if let [Token::Uint(request_id), Token::String(feed_id), Token::Uint(callback_gas_limit), Token::Address(requester)] =
+            if let [Token::String(feed_id), Token::Uint(callback_gas_limit), Token::Address(requester)] =
                 tokens.as_slice()
             {
                 return Ok(Self {
-                    request_id: request_id.clone(),
                     feed_id: feed_id.clone(),
                     callback_gas_limit: callback_gas_limit.clone(),
                     requester: requester.clone(),
@@ -144,7 +130,6 @@ impl Tokenizable for ApolloCoordinatorRequest {
 
     fn into_token(self) -> Token {
         Token::Tuple(vec![
-            Token::Uint(self.request_id),
             Token::String(self.feed_id),
             Token::Uint(self.callback_gas_limit),
             Token::Address(self.requester),

@@ -14,6 +14,8 @@ local_deploy_apollo: update_candid build_apollo_instance
 ifndef SYBIL_CANISTER
 	$(error SYBIL_CANISTER ENV is undefined)
 endif
+	dfx deploy --specified-id ajuq4-ruaaa-aaaaa-qaaga-cai evm_rpc --argument '(record { nodesInSubnet = 28 })'
+
 	dfx canister create apollo && dfx build apollo && gzip -f -1 ./.dfx/local/canisters/apollo/apollo.wasm
 	dfx canister install --wasm ./.dfx/local/canisters/apollo/apollo.wasm.gz --argument \
 		"(\"${SYBIL_CANISTER}\", \"dfx_test_key\")" apollo
@@ -27,6 +29,8 @@ ifndef MULTICALL_ADDRESS
 	$(eval MULTICALL_ADDRESS := 0x65309C2B0f31866a46b0FB2BcA2c3188a747B78f)
 	$(echo MULTICALL_ADDRESS ENV is undefined, using default value: ${MULTICALL_ADDRESS} for holeski)
 endif
+
+	dfx deploy --specified-id ajuq4-ruaaa-aaaaa-qaaga-cai evm_rpc --argument '(record { nodesInSubnet = 28 })'
 
 	dfx canister create apollo_instance && dfx build apollo_instance && gzip -f -1 ./.dfx/local/canisters/apollo_instance/apollo_instance.wasm
 	dfx canister install --wasm ./.dfx/local/canisters/apollo_instance/apollo_instance.wasm.gz --argument \
@@ -102,6 +106,7 @@ endif
 			multicall_address = \"${MULTICALL_ADDRESS}\"; \
 			timer_frequency_sec = 10:nat64; \
 			block_gas_limit = 1_000_000_000_000:nat; \
+			evm_rpc_canister = \"$(shell dfx canister id evm_rpc)\"; \
 			min_balance = 50_000_000_000_000_000:nat; \
 		})" --with-cycles 500000000000 --wallet $(shell dfx identity get-wallet) 
 

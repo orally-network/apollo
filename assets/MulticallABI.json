@@ -36,7 +36,7 @@
             {
                 "name": "calls",
                 "type": "tuple[]",
-                "internalType": "struct Multicall.Call[]",
+                "internalType": "struct OrallyMulticall.Call[]",
                 "components": [
                     {
                         "name": "target",
@@ -60,7 +60,7 @@
             {
                 "name": "",
                 "type": "tuple[]",
-                "internalType": "struct Multicall.Result[]",
+                "internalType": "struct OrallyMulticall.Result[]",
                 "components": [
                     {
                         "name": "success",
@@ -89,7 +89,7 @@
             {
                 "name": "transfers",
                 "type": "tuple[]",
-                "internalType": "struct Multicall.Transfer[]",
+                "internalType": "struct OrallyMulticall.Transfer[]",
                 "components": [
                     {
                         "name": "target",
@@ -108,8 +108,38 @@
         "stateMutability": "payable"
     },
     {
+        "type": "event",
+        "name": "MulticallExecuted",
+        "inputs": [
+            {
+                "name": "resultExecutionData",
+                "type": "tuple[]",
+                "indexed": false,
+                "internalType": "struct OrallyMulticall.Result[]",
+                "components": [
+                    {
+                        "name": "success",
+                        "type": "bool",
+                        "internalType": "bool"
+                    },
+                    {
+                        "name": "usedGas",
+                        "type": "uint256",
+                        "internalType": "uint256"
+                    },
+                    {
+                        "name": "returnData",
+                        "type": "bytes",
+                        "internalType": "bytes"
+                    }
+                ]
+            }
+        ],
+        "anonymous": false
+    },
+    {
         "type": "error",
-        "name": "PythiaCallerUnauthorized",
+        "name": "CallerUnauthorized",
         "inputs": [
             {
                 "name": "caller",

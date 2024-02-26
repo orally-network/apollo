@@ -7,6 +7,7 @@ type AddApolloInstanceRequest = record {
   min_balance : nat;
   timer_frequency_sec : nat64;
   apollos_fee : nat;
+  evm_rpc_canister : text;
 };
 type ApolloError = variant {
   UtilsError : UtilsError;
@@ -32,6 +33,7 @@ type ApolloInstanceError = variant {
   FailedToInstallCode : text;
   ApolloCoordinatorPoolingError : text;
   FailedToDelete : text;
+  FailedToRestartTimer : text;
   FailedToCreate : text;
   TxWasNotSentToAMA;
 };
@@ -46,6 +48,7 @@ type ApolloInstanceMetadata = record {
   block_gas_limit : nat;
   min_balance : nat;
   apollos_fee : nat;
+  evm_rpc_canister : text;
 };
 type ApolloInstanceMetadataResult = variant {
   Ok : ApolloInstanceMetadata;
@@ -83,6 +86,7 @@ type UpdateMetadata = record {
   block_gas_limit : opt nat;
   min_balance : opt nat;
   apollos_fee : opt nat;
+  evm_rpc_canister : opt text;
 };
 type UtilsError = variant {
   FromHexError : text;
@@ -111,6 +115,7 @@ type Web3Error = variant {
   UnableToGetLogs : text;
 };
 type WithdrawRequestsError = variant {
+  UtilsError : UtilsError;
   UnableToCleanWithdrawRequests : text;
   UnableToAddWithdrawRequest : text;
 };
@@ -129,6 +134,7 @@ service : (text, text) -> {
   start : (nat) -> (Result);
   stop : (nat) -> (Result);
   update_apollo_instance_metadata : (nat, UpdateMetadata) -> (Result);
+  update_last_parsed_logs_from_block : (nat, opt nat64) -> (Result);
   update_metadata : (UpdateMetadata) -> (Result);
   update_timer_frequency_sec : (nat, nat64) -> (Result);
   upgrade_chains : () -> (Result);

@@ -25,6 +25,7 @@ pub fn execute() {
 
 pub async fn withdraw() {
     let reqs = WithdrawRequests::get_all();
+
     if reqs.is_empty() {
         return;
     }
@@ -41,6 +42,7 @@ pub async fn withdraw() {
 // Transaction fee will be reduced from the amount sent.
 // Meaning if user wants to send 1 ETH, and the transaction fee is 0.01 ETH, the user will send 0.99 ETH.
 async fn send_funds(reqs: &[WithdrawRequest]) -> Result<()> {
+    WithdrawRequests::clean()?;
     if reqs.is_empty() {
         return Ok(());
     }
@@ -56,7 +58,7 @@ async fn send_funds(reqs: &[WithdrawRequest]) -> Result<()> {
 
     log!("Transfers: {:#?}", transfers);
 
-    let w3 = web3::instance(&get_metadata!(chain_rpc))?;
+    let w3 = web3::instance(get_metadata!(chain_rpc), get_metadata!(evm_rpc_canister))?;
 
     for transfers_chunk in transfers.chunks(MAX_TRANSFERS) {
         // multiply the gas_price to 1.2 to avoid long transaction confirmation
@@ -91,8 +93,6 @@ async fn send_funds(reqs: &[WithdrawRequest]) -> Result<()> {
             Balances::reduce_amount(&transfer.from, &transfer.value.to_nat())?;
         }
     }
-
-    WithdrawRequests::clean()?;
 
     Ok(())
 }

@@ -12,6 +12,7 @@ pub struct ApolloInstanceInit {
     pub timer_frequency_sec: u64,
     pub block_gas_limit: Nat,
     pub sybil_canister_address: String,
+    pub evm_rpc_canister: String,
     pub min_balance: Nat,
 }
 
@@ -25,6 +26,7 @@ pub struct ApolloInstanceMetadata {
     pub apollo_evm_address: Option<String>,
     pub multicall_address: String,
     pub sybil_canister_address: String, // Principal is not supported by ciborium
+    pub evm_rpc_canister: String,       // Principal is not supported by ciborium
     pub block_gas_limit: Nat,
     pub min_balance: Nat,
 }
@@ -37,6 +39,7 @@ pub struct UpdateMetadata {
     pub apollo_coordinator: Option<String>,
     pub multicall_address: Option<String>,
     pub sybil_canister_address: Option<String>, // Principal is not supported by ciborium
+    pub evm_rpc_canister: Option<String>,       // Principal is not supported by ciborium
     pub block_gas_limit: Option<Nat>,
     pub min_balance: Option<Nat>,
 }
@@ -61,6 +64,9 @@ impl ApolloInstanceMetadata {
         if let Some(sybil_canister_address) = update.sybil_canister_address {
             self.sybil_canister_address = sybil_canister_address;
         }
+        if let Some(evm_rpc_canister) = update.evm_rpc_canister {
+            self.evm_rpc_canister = evm_rpc_canister;
+        }
         if let Some(block_gas_limit) = update.block_gas_limit {
             self.block_gas_limit = block_gas_limit;
         }
@@ -81,6 +87,7 @@ impl Default for ApolloInstanceMetadata {
             apollo_evm_address: None,
             multicall_address: "".to_string(),
             sybil_canister_address: "".to_string(),
+            evm_rpc_canister: "".to_string(),
             block_gas_limit: Nat::from(0),
             min_balance: Nat::from(0),
         }
@@ -100,6 +107,7 @@ impl From<ApolloInstanceInit> for ApolloInstanceMetadata {
             multicall_address: init.multicall_address,
             block_gas_limit: init.block_gas_limit,
             sybil_canister_address: init.sybil_canister_address,
+            evm_rpc_canister: init.evm_rpc_canister,
             min_balance: init.min_balance,
         }
     }

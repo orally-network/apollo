@@ -44,6 +44,8 @@ pub enum ApolloInstanceError {
     TxWasNotSentToAMA,
     #[error("Apollo coordinator pooling error: {0}")]
     ApolloCoordinatorPoolingError(String),
+    #[error("Failed to restart timer: {0}")]
+    FailedToRestartTimer(String),
 }
 
 #[derive(Error, Debug, CandidType, PartialEq, Deserialize)]
@@ -118,12 +120,14 @@ pub enum MulticallError {
     EmptyResponse,
     #[error("Response is not an array, response: {0}")]
     ResponseIsNotAnArray(String),
+    #[error("Abi parsing error: {0}")]
+    AbiParsingError(String),
     #[error("Utils error: {0}")]
     UtilsError(#[from] UtilsError),
     #[error("Web3 error: {0}")]
     Web3Error(#[from] Web3Error),
-    #[error("Contract error: {0}")]
-    ContractError(String),
+    #[error("Failed to parse multicall result from log: {0}")]
+    FailedToParseFromLog(String),
     #[error("Unable to encode call data: {0}")]
     UnableToEncodeCallData(String),
     #[error("Block gas limit is too low")]
@@ -150,6 +154,8 @@ pub enum WithdrawRequestsError {
     UnableToAddWithdrawRequest(String),
     #[error("Unable to clean withdraw requests: {0}")]
     UnableToCleanWithdrawRequests(String),
+    #[error("Utils error: {0}")]
+    UtilsError(#[from] UtilsError),
 }
 
 #[derive(Error, Debug, CandidType, PartialEq, Deserialize)]
