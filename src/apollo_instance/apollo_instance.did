@@ -99,6 +99,7 @@ service : (ApolloInstanceInit) -> {
   grant : (text, text, text) -> (Result);
   restrict : (text, text, text) -> (Result);
   start : () -> (Result);
+  start_once : () -> (Result);
   stop : () -> (Result);
   update_last_parsed_logs_from_block : (opt nat64) -> (Result);
   update_metadata : (UpdateMetadata) -> (Result);

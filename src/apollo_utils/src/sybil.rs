@@ -3,7 +3,7 @@ use candid::{CandidType, Principal};
 use ic_web3_rs::ethabi::Token;
 use serde::{Deserialize, Serialize};
 
-use crate::{encoding::encode_packed, errors::SybilError, log, retry_until_success};
+use crate::{errors::SybilError, log, retry_until_success};
 
 #[derive(Clone, Debug, CandidType, Deserialize, Serialize)]
 enum FeedDataResponse {
@@ -55,9 +55,9 @@ pub struct AssetDataResult {
     pub signature: Option<String>,
 }
 
-impl AssetDataResult {
-    pub fn encode_packed(&self) -> Vec<u8> {
-        let raw_data = match self.data.clone() {
+impl AssetData {
+    pub fn encode(&self) -> Vec<Token> {
+        match self.clone() {
             AssetData::DefaultPriceFeed {
                 symbol,
                 rate,
@@ -96,9 +96,7 @@ impl AssetDataResult {
             AssetData::CustomString { id, value } => {
                 vec![Token::String(id.clone()), Token::String(value.clone())]
             }
-        };
-
-        encode_packed(&raw_data).expect("tokens should be valid")
+        }
     }
 }
 
@@ -142,10 +140,10 @@ pub async fn get_asset_data(
     }
 }
 
-pub async fn get_sybil_input(
+pub async fn get_sybil_feed(
     sybil_canister_address: String,
     feed_id: String,
-) -> Result<Vec<Token>, SybilError> {
+) -> Result<AssetData, SybilError> {
     let sybil_canister_address = Principal::from_text(sybil_canister_address)
         .map_err(|err| SybilError::InvalidPrincipal(err.to_string()))?;
 
@@ -157,35 +155,5 @@ pub async fn get_sybil_input(
     let asset_data = retry_until_success!(get_asset_data(sybil_canister_address, feed_id.clone()))?;
 
     log!("[ABI] get_sybil_input got asset_data feed_id: {}", feed_id);
-    match asset_data.data {
-        AssetData::DefaultPriceFeed {
-            symbol,
-            rate,
-            decimals,
-            timestamp,
-        } => Ok(vec![
-            Token::String(symbol),
-            Token::Uint(rate.into()),
-            Token::Uint(decimals.into()),
-            Token::Uint(timestamp.into()),
-        ]),
-        AssetData::CustomPriceFeed {
-            symbol,
-            rate,
-            decimals,
-            timestamp,
-            ..
-        } => Ok(vec![
-            Token::String(symbol),
-            Token::Uint(rate.into()),
-            Token::Uint(decimals.into()),
-            Token::Uint(timestamp.into()),
-        ]),
-        _ => {
-            return Err(SybilError::UnsupportedAssetDataType(format!(
-                "{:?}",
-                asset_data.data
-            )))
-        }
-    }
+    Ok(asset_data.data)
 }

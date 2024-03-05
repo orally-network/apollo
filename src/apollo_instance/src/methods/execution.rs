@@ -8,15 +8,26 @@ use crate::{jobs::execute, types::timer::Timer};
 
 #[candid_method]
 #[update]
+pub fn start_once() -> Result<()> {
+    validate_caller()?;
+
+    execute();
+
+    Timer::deactivate()
+        .map_err(|err| ApolloInstanceError::FailedToRestartTimer(err.to_string()))?;
+
+    Ok(())
+}
+
+#[candid_method]
+#[update]
 pub fn start() -> Result<()> {
     validate_caller()?;
 
-    if Timer::is_active() {
-        Timer::deactivate()
-            .map_err(|err| ApolloInstanceError::FailedToRestartTimer(err.to_string()))?;
+    if !Timer::is_active() {
+        Timer::activate();
+        execute();
     }
-    Timer::activate();
-    execute();
 
     Ok(())
 }
