@@ -231,6 +231,10 @@ async fn remove_apollo_instance(chain_id: Nat) -> Result<()> {
         }
     };
 
+    STATE.with(|s| {
+        s.borrow_mut().chains.remove(&chain_id.to_u32());
+    });
+
     Ok(())
 }
 
