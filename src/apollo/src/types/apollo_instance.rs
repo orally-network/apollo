@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 pub struct ApolloInstance {
     pub canister_id: Principal,
     pub chain_id: Nat,
+    pub apollo_main_address: String,
     pub is_active: bool,
 }
 

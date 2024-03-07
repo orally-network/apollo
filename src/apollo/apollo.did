@@ -18,6 +18,7 @@ type ApolloError = variant {
   ChainAlreadyExists : nat;
 };
 type ApolloInstance = record {
+  apollo_main_address : text;
   canister_id : principal;
   chain_id : nat;
   is_active : bool;
@@ -123,6 +124,7 @@ service : (text, text) -> {
   add_apollo_instance : (AddApolloInstanceRequest) -> (Result);
   add_apollo_instances_manually : (vec ApolloInstance) -> (Result);
   deposit : (nat, text, opt text, text, text) -> (Result);
+  fix : () -> ();
   get_ama : (nat) -> (StringResult);
   get_apollo_instance_metadata : (nat) -> (ApolloInstanceMetadataResult);
   get_apollo_instances : (opt Pagination) -> (PaginationResult) query;

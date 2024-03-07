@@ -3,7 +3,6 @@ all: local_deploy_apollo
 
 update_candid:
 	cargo test update_candid
-	dfx generate 
 
 build_apollo_instance:
 	dfx build --check apollo_instance

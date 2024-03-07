@@ -5,11 +5,11 @@ use crate::types::{apollo_instance::ApolloInstance, Metadata, STATE};
 use apollo_utils::apollo_instance::ApolloInstanceInit;
 use apollo_utils::canister::validate_caller;
 use apollo_utils::errors::{ApolloError, ApolloInstanceError};
-use apollo_utils::get_metadata;
 use apollo_utils::log;
 use apollo_utils::memory::Cbor;
 use apollo_utils::nat::ToNativeTypes;
 use apollo_utils::pagination::{Pagination, PaginationResult};
+use apollo_utils::{get_metadata, retry_until_success};
 use candid::{candid_method, encode_args, Nat};
 use ic_cdk::api::management_canister::main::{
     canister_status, create_canister, delete_canister, install_code, stop_canister,
@@ -142,11 +142,18 @@ async fn add_apollo_instance(req: AddApolloInstanceRequest) -> Result<()> {
                 chain_id
             );
 
+            let (result,): (std::result::Result<String, ApolloInstanceError>,) =
+                retry_until_success!(ic_cdk::call(canister_id, "get_apollo_address", ()))
+                    .map_err(|(_, msg)| ApolloError::CommunicationWithApolloInstanceFailed(msg))?;
+
+            let apollo_main_address = result?;
+
             STATE.with(|s| {
                 let mut state = s.borrow_mut();
                 let apollo_instance = ApolloInstance {
                     canister_id,
                     is_active: false,
+                    apollo_main_address,
                     chain_id: chain_id.clone(),
                 };
 
