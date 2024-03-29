@@ -81,15 +81,30 @@ async fn process_requests<T: Transport>(
             continue;
         }
 
-        let sybil_feed = get_sybil_feed(
+        let sybil_feed_result = get_sybil_feed(
             get_metadata!(sybil_canister_address),
             apollo_coordinator_request.feed_id.clone(),
         )
-        .await?;
+        .await;
+
+        let sybil_feed = match sybil_feed_result {
+            Ok(feed) => feed,
+            Err(err) => {
+                log!(
+                    "[EXECUTION] chain: {}, requester: {}, feed_id: {}, error: {}",
+                    get_metadata!(chain_id),
+                    apollo_coordinator_request.requester,
+                    apollo_coordinator_request.feed_id,
+                    err
+                );
+
+                continue;
+            }
+        };
 
         let target_function = serde_json::from_str::<Function>(TARGET_FUNCTION_ABI)?;
 
-        let data = ic_web3_rs::ethabi::encode(&sybil_feed.encode());
+        let data = ic_web3_rs::ethabi::encode(&sybil_feed.encode().await);
 
         let call_data = target_function
             .encode_input(&[Token::Bytes(data)])

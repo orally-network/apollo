@@ -27,5 +27,4 @@ ciborium = "0.2.1"
 paginate = "1.1.11"
 jsonrpc-core = "18.0.0"
 
-cketh-common = { git = "https://github.com/dfinity/ic", rev = "8511846fb6352a0a4f9abae1a8fc8569aeba5f10", package = "ic-cketh-minter" }
-# cketh-common = { git = "https://github.com/dfinity/ic", tag = "release-2024-02-07_23-01", package = "ic-cketh-minter" }
+cketh-common = { git = "https://github.com/dfinity/ic", rev = "22b875f2b9508739b005d4352c14e877995f52fd", package = "ic-cketh-minter" }

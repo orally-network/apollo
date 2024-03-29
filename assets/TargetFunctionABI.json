@@ -6,7 +6,7 @@
             "type": "bytes"
         }
     ],
-    "name": "raw_fulfill_data",
+    "name": "rawFulfillData",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

@@ -1,5 +1,5 @@
 
-all: local_deploy_apollo
+all: local_deploy_evm_rpc local_deploy_apollo
 
 update_candid:
 	cargo test update_candid
@@ -7,6 +7,9 @@ update_candid:
 build_apollo_instance:
 	dfx build --check apollo_instance
 	mv ./.dfx/local/canisters/apollo_instance/apollo_instance.wasm assets/apollo_instance.wasm
+
+local_deploy_evm_rpc:
+	dfx deploy evm_rpc --argument '(record { nodesInSubnet = 28 })'
 
 
 local_deploy_apollo: update_candid build_apollo_instance   
@@ -53,13 +56,15 @@ local_upgrade_apollo_instance: update_candid
 
 
 
-local_upgrade: local_upgrade_apollo 
+local_upgrade: local_upgrade_apollo local_upgrade_evm_rpc
 
 local_upgrade_apollo: build_apollo_instance update_candid 
 	dfx build apollo 
 	gzip -f -1 ./.dfx/local/canisters/apollo/apollo.wasm
 	dfx canister install --mode upgrade --wasm ./.dfx/local/canisters/apollo/apollo.wasm.gz apollo
 	dfx canister call apollo upgrade_chains 
+
+local_upgrade_evm_rpc: local_deploy_evm_rpc
 
 
 ic_upgrade: ic_upgrade_apollo

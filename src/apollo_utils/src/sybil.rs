@@ -1,6 +1,7 @@
 use anyhow::{anyhow, Result};
 use candid::{CandidType, Principal};
-use ic_web3_rs::ethabi::Token;
+use ic_cdk::api::management_canister::main::raw_rand;
+use ic_web3_rs::{ethabi::Token, types::U256};
 use serde::{Deserialize, Serialize};
 
 use crate::{errors::SybilError, log, retry_until_success};
@@ -34,6 +35,7 @@ pub enum AssetData {
         id: String,
         value: String,
     },
+    Random,
 }
 
 impl Default for AssetData {
@@ -56,7 +58,7 @@ pub struct AssetDataResult {
 }
 
 impl AssetData {
-    pub fn encode(&self) -> Vec<Token> {
+    pub async fn encode(&self) -> Vec<Token> {
         match self.clone() {
             AssetData::DefaultPriceFeed {
                 symbol,
@@ -95,6 +97,11 @@ impl AssetData {
             }
             AssetData::CustomString { id, value } => {
                 vec![Token::String(id.clone()), Token::String(value.clone())]
+            }
+            AssetData::Random => {
+                let (random,) = raw_rand().await.expect("should be able to get random");
+                let u256 = U256::from_big_endian(&random);
+                vec![Token::Array(vec![Token::Uint(u256)])]
             }
         }
     }
@@ -144,6 +151,10 @@ pub async fn get_sybil_feed(
     sybil_canister_address: String,
     feed_id: String,
 ) -> Result<AssetData, SybilError> {
+    if feed_id == "random" {
+        return Ok(AssetData::Random);
+    }
+
     let sybil_canister_address = Principal::from_text(sybil_canister_address)
         .map_err(|err| SybilError::InvalidPrincipal(err.to_string()))?;
 

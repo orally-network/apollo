@@ -1,7 +1,7 @@
 use anyhow::Result;
 use candid::{CandidType, Principal};
 use cketh_common::{
-    eth_rpc::{RpcError, SendRawTransactionResult},
+    eth_rpc::RpcError,
     eth_rpc_client::{
         providers::{EthMainnetService, EthSepoliaService, RpcApi, RpcService},
         RpcConfig,
@@ -96,13 +96,21 @@ pub enum MultiRpcResult<T> {
     Inconsistent(Vec<(RpcService, RpcResult<T>)>),
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, CandidType, Deserialize)]
+pub enum SendRawTransactionStatus {
+    Ok(Option<cketh_common::eth_rpc::Hash>),
+    InsufficientFunds,
+    NonceTooLow,
+    NonceTooHigh,
+}
+
 async fn send_raw_tx(
     evm_rpc_canister: Principal,
     source: RpcServices,
     config: Option<RpcConfig>,
     raw_tx: Vec<u8>,
 ) -> Result<Value, ic_web3_rs::Error> {
-    let (result,): (MultiRpcResult<SendRawTransactionResult>,) = call_with_payment128(
+    let (result,): (MultiRpcResult<SendRawTransactionStatus>,) = call_with_payment128(
         evm_rpc_canister,
         "eth_sendRawTransaction",
         (source, config, format!("0x{}", hex::encode(raw_tx.clone()))),
@@ -120,7 +128,7 @@ async fn send_raw_tx(
     let send_raw_tx_result =
         result.map_err(|err| ic_web3_rs::Error::InvalidResponse(format!("{:?}", err)))?;
 
-    if let SendRawTransactionResult::Ok = send_raw_tx_result {
+    if let SendRawTransactionStatus::Ok(_) = send_raw_tx_result {
         Ok(Value::String(format!(
             "{:#?}",
             H256::from_slice(&keccak256(&raw_tx))
