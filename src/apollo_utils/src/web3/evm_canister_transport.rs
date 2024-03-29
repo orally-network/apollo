@@ -117,15 +117,20 @@ async fn send_raw_tx(
         unreachable!("Should be consistent result (or you need to implement handling of inconsistent results, idk, I'm not your mom)")
     };
 
-    result
-        .map(|val| {
-            if let SendRawTransactionResult::Ok = val {
-                Value::String(format!("{:#?}", H256::from_slice(&keccak256(&raw_tx))))
-            } else {
-                unreachable!("Should be a hash")
-            }
-        })
-        .map_err(|err| ic_web3_rs::Error::InvalidResponse(format!("{:?}", err)))
+    let send_raw_tx_result =
+        result.map_err(|err| ic_web3_rs::Error::InvalidResponse(format!("{:?}", err)))?;
+
+    if let SendRawTransactionResult::Ok = send_raw_tx_result {
+        Ok(Value::String(format!(
+            "{:#?}",
+            H256::from_slice(&keccak256(&raw_tx))
+        )))
+    } else {
+        Err(ic_web3_rs::Error::InvalidResponse(format!(
+            "Error in ic_eth_rpc: {:?}",
+            send_raw_tx_result
+        )))
+    }
 }
 
 impl Transport for EVMCanisterTransport {

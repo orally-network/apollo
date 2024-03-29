@@ -4,10 +4,11 @@ use apollo_utils::{
     get_metadata, log,
     multicall::{self, Call},
     nat::{ToNatType, ToNativeTypes},
-    sybil::{get_sybil_feed, AssetData},
+    sybil::get_sybil_feed,
     web3::Web3Instance,
 };
-use ic_web3_rs::{ethabi::Contract, types::U256, Transport};
+use ic_web3_rs::ethabi::Function;
+use ic_web3_rs::{ethabi::Token, types::U256, Transport};
 
 use crate::{
     types::{allowances::Allowances, balances::Balances, timer::Timer, ApolloCoordinatorRequest},
@@ -19,7 +20,7 @@ use anyhow::Result;
 mod logs_polling;
 pub mod withdraw;
 
-const TARGET_FUNCTIONS_ABI: &str = include_str!("../../../../assets/TargetFunctionsABI.json");
+const TARGET_FUNCTION_ABI: &str = include_str!("../../../../assets/TargetFunctionABI.json");
 
 pub fn execute() {
     if !Timer::is_active() {
@@ -86,24 +87,13 @@ async fn process_requests<T: Transport>(
         )
         .await?;
 
-        let contract_with_functions = Contract::load(TARGET_FUNCTIONS_ABI.as_bytes())?;
+        let target_function = serde_json::from_str::<Function>(TARGET_FUNCTION_ABI)?;
 
-        let call_data = match sybil_feed {
-            AssetData::DefaultPriceFeed { .. } | AssetData::CustomPriceFeed { .. } => {
-                contract_with_functions
-                    .function("update_feed")?
-                    .encode_input(&sybil_feed.encode())
-                    .map_err(|err| MulticallError::UnableToEncodeCallData(err.to_string()))?
-            }
-            AssetData::CustomNumber { .. } => contract_with_functions
-                .function("update_custom_number")?
-                .encode_input(&sybil_feed.encode())
-                .map_err(|err| MulticallError::UnableToEncodeCallData(err.to_string()))?,
-            AssetData::CustomString { .. } => contract_with_functions
-                .function("update_custom_string")?
-                .encode_input(&sybil_feed.encode())
-                .map_err(|err| MulticallError::UnableToEncodeCallData(err.to_string()))?,
-        };
+        let data = ic_web3_rs::ethabi::encode(&sybil_feed.encode());
+
+        let call_data = target_function
+            .encode_input(&[Token::Bytes(data)])
+            .map_err(|err| MulticallError::UnableToEncodeCallData(err.to_string()))?;
 
         calls.push(Call {
             target: apollo_coordinator_request.requester,
@@ -162,10 +152,7 @@ mod tests {
 
     #[test]
     fn test_target_function_abi() -> Result<()> {
-        let contract_with_functions = Contract::load(TARGET_FUNCTIONS_ABI.as_bytes())?;
-        let _ = contract_with_functions.function("update_feed")?;
-        let _ = contract_with_functions.function("update_custom_number")?;
-        let _ = contract_with_functions.function("update_custom_string")?;
+        let _ = serde_json::from_str::<Function>(TARGET_FUNCTION_ABI)?;
 
         Ok(())
     }

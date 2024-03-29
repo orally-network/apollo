@@ -1,5 +1,6 @@
 use apollo_utils::canister::validate_caller;
 use apollo_utils::errors::ApolloInstanceError;
+use apollo_utils::log;
 use candid::candid_method;
 use ic_cdk::update;
 
@@ -9,7 +10,10 @@ use crate::{jobs::execute, types::timer::Timer};
 #[candid_method]
 #[update]
 pub fn start_once() -> Result<()> {
+    log!("Starting Apollo instance once");
     validate_caller()?;
+
+    Timer::activate();
 
     execute();
 

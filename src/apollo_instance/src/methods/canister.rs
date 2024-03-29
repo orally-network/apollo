@@ -2,6 +2,7 @@ use crate::{types::STATE, utils::apollo_evm_address, Result};
 use apollo_utils::{
     apollo_instance::{ApolloInstanceMetadata, UpdateMetadata},
     canister::validate_caller,
+    get_state, log,
     memory::Cbor,
     update_state,
 };
@@ -33,6 +34,12 @@ fn update_metadata(update_metadata_args: UpdateMetadata) -> Result<()> {
 #[update]
 fn update_timer_frequency_sec(timer_frequency_sec: u64) -> Result<()> {
     validate_caller()?;
+
+    log!(
+        "Updating timer frequency from {} to {} seconds",
+        get_state!(timer_frequency_sec),
+        timer_frequency_sec
+    );
 
     update_state!(timer_frequency_sec, timer_frequency_sec);
     Ok(())

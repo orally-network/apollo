@@ -16,7 +16,7 @@ pub async fn start_once(chain_id: Nat) -> Result<()> {
 
     update_apollo_instance!(chain_id.clone(), apollo_instance.clone());
 
-    retry_until_success!(ic_cdk::call(apollo_instance.canister_id, "start_one", ()))
+    retry_until_success!(ic_cdk::call(apollo_instance.canister_id, "start_once", ()))
         .map_err(|(_, msg)| ApolloError::CommunicationWithApolloInstanceFailed(msg))?;
 
     log!("Apollo instance started once: {}", chain_id);

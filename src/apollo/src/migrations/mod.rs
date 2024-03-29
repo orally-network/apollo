@@ -19,9 +19,9 @@ fn pre_upgrade() {
 // A post-upgrade hook for deserializing the data back into the heap.
 #[post_upgrade]
 async fn post_upgrade() {
-    set_custom_panic_hook();
-
     load_upgrade_data();
+
+    set_custom_panic_hook();
     log!("Post upgrade finished");
 }
 
