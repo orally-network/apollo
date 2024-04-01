@@ -62,7 +62,7 @@ async fn send_funds(reqs: &[WithdrawRequest]) -> Result<()> {
 
     for transfers_chunk in transfers.chunks(MAX_TRANSFERS) {
         // multiply the gas_price to 1.2 to avoid long transaction confirmation
-        let gas_price: U256 = (w3.get_gas_price().await? / 10) * 12;
+        let gas_price: U256 = (w3.get_gas_price().await? * 12) / 10;
 
         let mut multitransfer_args = MultitransferArgs::new(transfers_chunk.to_vec());
 

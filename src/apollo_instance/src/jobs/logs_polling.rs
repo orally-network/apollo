@@ -31,7 +31,7 @@ pub async fn _execute() -> Result<(), LogsPoolingError> {
     let (requests, last_block) = get_requests(&w3).await?;
 
     // multiply the gas_price to 1.2 to avoid long transaction confirmation
-    let gas_price: U256 = (w3.get_gas_price().await? / 10) * 12;
+    let gas_price: U256 = (w3.get_gas_price().await? * 12) / 10;
 
     process_requests(&w3, requests, gas_price)
         .await
