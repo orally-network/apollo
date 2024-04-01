@@ -373,7 +373,9 @@ async fn execute_multicall_batch<T: Transport>(
         .get_logs(
             tx_hash.block_number.expect("should be present").as_u64(),
             Some(tx_hash.block_number.expect("should be present").as_u64()),
-            Some(H256::from_str(MULTICALL_EXECUTED_TOPIC).expect("should be able to parse")),
+            Some(vec![
+                H256::from_str(MULTICALL_EXECUTED_TOPIC).expect("should be able to parse")
+            ]),
             Some(contract.address()),
         )
         .await?;

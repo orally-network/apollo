@@ -1,7 +1,5 @@
 use anyhow::{anyhow, Result};
 use candid::{CandidType, Principal};
-use ic_cdk::api::management_canister::main::raw_rand;
-use ic_web3_rs::{ethabi::Token, types::U256};
 use serde::{Deserialize, Serialize};
 
 use crate::{errors::SybilError, log, retry_until_success};
@@ -13,7 +11,7 @@ enum FeedDataResponse {
 }
 
 #[derive(Clone, Debug, CandidType, Deserialize, Serialize)]
-pub enum AssetData {
+pub enum SybilAssetData {
     DefaultPriceFeed {
         symbol: String,
         rate: u64,
@@ -35,76 +33,14 @@ pub enum AssetData {
         id: String,
         value: String,
     },
-    Random,
-}
-
-impl Default for AssetData {
-    fn default() -> Self {
-        AssetData::DefaultPriceFeed {
-            symbol: "".to_string(),
-            rate: 0,
-            decimals: 0,
-            timestamp: 0,
-        }
-    }
 }
 
 /// Result of the asset data request from sybil
 /// Copy-pasted from sybil in order to avoid lots of imports
-#[derive(Clone, Default, Debug, CandidType, Serialize, Deserialize)]
+#[derive(Clone, Debug, CandidType, Serialize, Deserialize)]
 pub struct AssetDataResult {
-    pub data: AssetData,
+    pub data: SybilAssetData,
     pub signature: Option<String>,
-}
-
-impl AssetData {
-    pub async fn encode(&self) -> Vec<Token> {
-        match self.clone() {
-            AssetData::DefaultPriceFeed {
-                symbol,
-                rate,
-                decimals,
-                timestamp,
-            } => vec![
-                Token::String(symbol.clone()),
-                Token::Uint(rate.into()),
-                Token::Uint(decimals.into()),
-                Token::Uint(timestamp.into()),
-            ],
-            AssetData::CustomPriceFeed {
-                symbol,
-                rate,
-                decimals,
-                timestamp,
-            } => {
-                vec![
-                    Token::String(symbol.clone()),
-                    Token::Uint(rate.into()),
-                    Token::Uint(decimals.into()),
-                    Token::Uint(timestamp.into()),
-                ]
-            }
-            AssetData::CustomNumber {
-                id,
-                value,
-                decimals,
-            } => {
-                vec![
-                    Token::String(id.clone()),
-                    Token::Uint(value.into()),
-                    Token::Uint(decimals.into()),
-                ]
-            }
-            AssetData::CustomString { id, value } => {
-                vec![Token::String(id.clone()), Token::String(value.clone())]
-            }
-            AssetData::Random => {
-                let (random,) = raw_rand().await.expect("should be able to get random");
-                let u256 = U256::from_big_endian(&random);
-                vec![Token::Array(vec![Token::Uint(u256)])]
-            }
-        }
-    }
 }
 
 pub async fn is_feed_exists(sybil_canister_address: Principal, feed_id: String) -> Result<bool> {
@@ -126,7 +62,7 @@ pub async fn is_feed_exists(sybil_canister_address: Principal, feed_id: String) 
     Ok(is_exist)
 }
 
-pub async fn get_asset_data(
+async fn get_asset_data(
     sybil_canister_address: Principal,
     feed_id: String,
 ) -> Result<AssetDataResult, SybilError> {
@@ -150,11 +86,7 @@ pub async fn get_asset_data(
 pub async fn get_sybil_feed(
     sybil_canister_address: String,
     feed_id: String,
-) -> Result<AssetData, SybilError> {
-    if feed_id == "random" {
-        return Ok(AssetData::Random);
-    }
-
+) -> Result<SybilAssetData, SybilError> {
     let sybil_canister_address = Principal::from_text(sybil_canister_address)
         .map_err(|err| SybilError::InvalidPrincipal(err.to_string()))?;
 

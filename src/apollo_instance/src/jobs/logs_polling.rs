@@ -18,9 +18,12 @@ use super::process_requests;
 
 const APOLLO_COORDINATOR_ABI: &[u8] =
     include_bytes!("../../../../assets/ApolloCoordinatorABI.json");
-const APOOLLO_COORDINATOR_PRICE_FEED_REQUESTED_EVENT_NAME: &str = "PriceFeedRequested";
-const PRICE_FEED_REQUESTED_TOPIC: &str =
-    "0xdc9a6ce9bdf5d7327deb64beb9074cf0bc6e6c9ca2b318dae8b8ad4d38dd9344";
+const APOOLLO_COORDINATOR_DATA_FEED_REQUESTED_EVENT_NAME: &str = "DataFeedRequested";
+const APOOLLO_COORDINATOR_RANDOM_FEED_REQUESTED_EVENT_NAME: &str = "RandomFeedRequested";
+const DATA_FEED_REQUESTED_TOPIC: &str =
+    "0x23752ae5400f82f705b104bd992d5ae9631719e025bb5934d3ed82d5aa9c27ee";
+const RANDOM_FEED_REQUESTED_TOPIC: &str =
+    "0x266a11fde650ce93d717e570d9ebbfa8746356fe5c7c73647a03d56dde7027c0";
 
 pub async fn _execute() -> Result<(), LogsPoolingError> {
     let w3 = web3::instance(get_metadata!(chain_rpc), get_metadata!(evm_rpc_canister))?;
@@ -62,7 +65,10 @@ async fn get_requests<T: Transport>(
         .get_logs(
             last_parsed_logs_from_block,
             None,
-            Some(H256::from_str(PRICE_FEED_REQUESTED_TOPIC).expect("should be able to parse")),
+            Some(vec![
+                H256::from_str(DATA_FEED_REQUESTED_TOPIC).expect("should be able to parse"),
+                H256::from_str(RANDOM_FEED_REQUESTED_TOPIC).expect("should be able to parse"),
+            ]),
             Some(address::to_h160(&get_metadata!(apollo_coordinator))?),
         )
         .await;
@@ -83,8 +89,11 @@ async fn get_requests<T: Transport>(
 
     let apollo_coordinator_abi = ethabi::Contract::load(APOLLO_COORDINATOR_ABI).unwrap();
 
-    let abi_event = apollo_coordinator_abi
-        .event(APOOLLO_COORDINATOR_PRICE_FEED_REQUESTED_EVENT_NAME)
+    let data_feed_event = apollo_coordinator_abi
+        .event(APOOLLO_COORDINATOR_DATA_FEED_REQUESTED_EVENT_NAME)
+        .expect("should be able to get event by name");
+    let random_feed_event = apollo_coordinator_abi
+        .event(APOOLLO_COORDINATOR_RANDOM_FEED_REQUESTED_EVENT_NAME)
         .expect("should be able to get event by name");
 
     let mut requests = Vec::with_capacity(logs.len());
@@ -106,11 +115,35 @@ async fn get_requests<T: Transport>(
             data: log.data.0,
         };
 
-        let parsed_log = abi_event
-            .parse_log(raw_log)
-            .map_err(|err| LogsPoolingError::AbiParsingError(err.to_string()))?;
+        let first_topic = format!(
+            "{:?}",
+            raw_log
+                .topics
+                .first()
+                .expect("should be able to get first topic")
+        );
 
-        requests.push(ApolloCoordinatorRequest::from(parsed_log));
+        log!("First topic: {:?}", first_topic);
+
+        match first_topic.as_str() {
+            DATA_FEED_REQUESTED_TOPIC => {
+                let parsed_log = data_feed_event
+                    .parse_log(raw_log)
+                    .map_err(|err| LogsPoolingError::AbiParsingError(err.to_string()))?;
+
+                requests.push(ApolloCoordinatorRequest::new_from_data_feed_log(parsed_log))
+            }
+            RANDOM_FEED_REQUESTED_TOPIC => {
+                let parsed_log = random_feed_event
+                    .parse_log(raw_log)
+                    .map_err(|err| LogsPoolingError::AbiParsingError(err.to_string()))?;
+
+                requests.push(ApolloCoordinatorRequest::new_from_random_feed_log(
+                    parsed_log,
+                ))
+            }
+            _ => unreachable!("should be able to parse"),
+        }
     }
 
     log!("[EXECUTION] Found {} requests", requests.len());

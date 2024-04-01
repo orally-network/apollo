@@ -11,7 +11,10 @@ use ic_web3_rs::ethabi::Function;
 use ic_web3_rs::{ethabi::Token, types::U256, Transport};
 
 use crate::{
-    types::{allowances::Allowances, balances::Balances, timer::Timer, ApolloCoordinatorRequest},
+    types::{
+        allowances::Allowances, asset_data::AssetData, balances::Balances, timer::Timer,
+        ApolloCoordinatorRequest,
+    },
     utils::apollo_evm_address,
 };
 
@@ -57,35 +60,56 @@ async fn process_requests<T: Transport>(
     let mut calls = Vec::with_capacity(requests.len());
 
     for apollo_coordinator_request in requests {
+        let requester = apollo_coordinator_request.requester();
+        let callback_gas_limit = apollo_coordinator_request.callback_gas_limit();
+        let feed_id = apollo_coordinator_request.feed_id();
         let balance = Balances::get(&Allowances::get_allowed_user(address::from_h160(
-            &apollo_coordinator_request.requester,
+            &requester,
         ))?)?
         .amount;
 
         if balance
-            < get_metadata!(min_balance)
-                + apollo_coordinator_request.callback_gas_limit.to_nat()
-                + get_metadata!(apollos_fee)
+            < get_metadata!(min_balance) + callback_gas_limit.to_nat() + get_metadata!(apollos_fee)
         {
             log!(
                 "[EXECUTION] chain: {}, not enough balance for requester {}. Needed (min_balance + callback_gas_limit + apollos_fee): {} + {} + {} = {}, current: {}",
                 get_metadata!(chain_id),
-                apollo_coordinator_request.requester,
+                requester,
                 get_metadata!(min_balance),
-                apollo_coordinator_request.callback_gas_limit,
+                callback_gas_limit,
                 get_metadata!(apollos_fee),
-                get_metadata!(min_balance) + apollo_coordinator_request.callback_gas_limit.to_nat() + get_metadata!(apollos_fee),
+                get_metadata!(min_balance) + callback_gas_limit.to_nat() + get_metadata!(apollos_fee),
                 balance
             );
 
             continue;
         }
 
-        let sybil_feed_result = get_sybil_feed(
-            get_metadata!(sybil_canister_address),
-            apollo_coordinator_request.feed_id.clone(),
-        )
-        .await;
+        let sybil_feed_result = match apollo_coordinator_request {
+            ApolloCoordinatorRequest::DataFeed {
+                request_id,
+                feed_id,
+                ..
+            } => {
+                let sybil_asset_data =
+                    get_sybil_feed(get_metadata!(sybil_canister_address), feed_id).await;
+
+                sybil_asset_data.map(|data| {
+                    AssetData::from_sybil_asset_data_and_req_id(request_id.as_u64(), data)
+                })
+            }
+            ApolloCoordinatorRequest::RandomFeed {
+                request_id,
+                num_words,
+                ..
+            } => {
+                log!("Random feed requested");
+                Ok(AssetData::Random {
+                    request_id: request_id.as_u64(),
+                    num_words: num_words.as_u64(),
+                })
+            }
+        };
 
         let sybil_feed = match sybil_feed_result {
             Ok(feed) => feed,
@@ -93,8 +117,8 @@ async fn process_requests<T: Transport>(
                 log!(
                     "[EXECUTION] chain: {}, requester: {}, feed_id: {}, error: {}",
                     get_metadata!(chain_id),
-                    apollo_coordinator_request.requester,
-                    apollo_coordinator_request.feed_id,
+                    requester,
+                    feed_id,
                     err
                 );
 
@@ -111,9 +135,9 @@ async fn process_requests<T: Transport>(
             .map_err(|err| MulticallError::UnableToEncodeCallData(err.to_string()))?;
 
         calls.push(Call {
-            target: apollo_coordinator_request.requester,
+            target: requester,
             call_data,
-            gas_limit: apollo_coordinator_request.callback_gas_limit,
+            gas_limit: callback_gas_limit,
         });
     }
 

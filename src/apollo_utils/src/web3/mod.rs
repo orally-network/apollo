@@ -83,7 +83,7 @@ impl<T: Transport> Web3Instance<T> {
         &self,
         from: u64,
         to: Option<u64>,
-        topic: Option<H256>,
+        topics: Option<Vec<H256>>,
         address: Option<H160>,
     ) -> Result<Vec<Log>, Web3Error> {
         let filter_builder = FilterBuilder::default();
@@ -93,11 +93,7 @@ impl<T: Transport> Web3Instance<T> {
             BlockNumber::Latest
         };
 
-        let topic1 = if let Some(topic) = topic {
-            Some(vec![topic])
-        } else {
-            None
-        };
+        let topic1 = topics;
 
         let address = if let Some(address) = address {
             vec![address]
