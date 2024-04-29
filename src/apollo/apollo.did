@@ -36,6 +36,7 @@ type ApolloInstanceError = variant {
   FailedToDelete : text;
   FailedToRestartTimer : text;
   FailedToCreate : text;
+  FailedToSendCycles : text;
   TxWasNotSentToAMA;
 };
 type ApolloInstanceMetadata = record {
@@ -132,6 +133,7 @@ service : (text, text) -> {
   grant : (nat, text, text, text) -> (Result);
   remove_apollo_instance : (nat) -> (Result);
   restrict : (nat, text, text, text) -> (Result);
+  send_cycles : (nat, principal, nat) -> (Result);
   start : (nat) -> (Result);
   start_once : (nat) -> (Result);
   stop : (nat) -> (Result);

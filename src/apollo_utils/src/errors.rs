@@ -22,6 +22,8 @@ pub enum ApolloError {
 pub enum ApolloInstanceError {
     #[error("Failed to update settings: {0}")]
     FailedToUpdateSettings(String),
+    #[error("Failed to send cycles: {0}")]
+    FailedToSendCycles(String),
     #[error("Failed to create: {0}")]
     FailedToCreate(String),
     #[error("Failed to stop: {0}")]

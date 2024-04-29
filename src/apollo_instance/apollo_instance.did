@@ -11,6 +11,7 @@ type ApolloInstanceError = variant {
   FailedToDelete : text;
   FailedToRestartTimer : text;
   FailedToCreate : text;
+  FailedToSendCycles : text;
   TxWasNotSentToAMA;
 };
 type ApolloInstanceInit = record {
@@ -98,6 +99,7 @@ service : (ApolloInstanceInit) -> {
   get_metadata : () -> (ApolloInstanceMetadata) query;
   grant : (text, text, text) -> (Result);
   restrict : (text, text, text) -> (Result);
+  send_cycles : (principal, nat) -> (Result);
   start : () -> (Result);
   start_once : () -> (Result);
   stop : () -> (Result);

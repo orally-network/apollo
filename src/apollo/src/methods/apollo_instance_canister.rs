@@ -4,10 +4,27 @@ use apollo_utils::{
     errors::{ApolloError, ApolloInstanceError},
     retry_until_success,
 };
-use candid::{candid_method, Nat};
+use candid::{candid_method, Nat, Principal};
 use ic_cdk::update;
 
 use crate::{types::custom_return_types::StringResult, ApolloInstanceMetadataResult, Result};
+
+#[candid_method]
+#[update]
+async fn send_cycles(chain_id: Nat, destination: Principal, amount: Nat) -> Result<()> {
+    validate_caller()?;
+    let apollo_instance = crate::get_apollo_instance!(chain_id);
+
+    let (result,): (std::result::Result<(), ApolloInstanceError>,) =
+        retry_until_success!(ic_cdk::call(
+            apollo_instance.canister_id,
+            "send_cycles",
+            (destination, amount.clone())
+        ))
+        .map_err(|(_, msg)| ApolloError::CommunicationWithApolloInstanceFailed(msg))?;
+
+    Ok(result?)
+}
 
 #[candid_method]
 #[update]

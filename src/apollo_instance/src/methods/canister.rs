@@ -2,12 +2,33 @@ use crate::{types::STATE, utils::apollo_evm_address, Result};
 use apollo_utils::{
     apollo_instance::{ApolloInstanceMetadata, UpdateMetadata},
     canister::validate_caller,
+    errors::ApolloInstanceError,
     get_state, log,
     memory::Cbor,
     update_state,
 };
-use candid::candid_method;
-use ic_cdk::{query, update};
+use candid::{candid_method, Principal};
+use ic_cdk::{api::management_canister::main::CanisterIdRecord, query, update};
+
+#[candid_method]
+#[update]
+async fn send_cycles(destination: Principal, amount: u128) -> Result<()> {
+    validate_caller()?;
+
+    log!("Sending {} cycles to {}", amount, destination);
+    ic_cdk::api::management_canister::main::deposit_cycles(
+        CanisterIdRecord {
+            canister_id: destination,
+        },
+        amount,
+    )
+    .await
+    .map_err(|(_, err)| ApolloInstanceError::FailedToSendCycles(err))?;
+
+    log!("Send {} cycles to {}", amount, destination);
+
+    Ok(())
+}
 
 #[candid_method]
 #[query]

@@ -35,6 +35,7 @@ use crate::types::apollo_instance::*;
 use crate::types::custom_return_types::*;
 use apollo_utils::apollo_instance::UpdateMetadata;
 use apollo_utils::pagination::*;
+use candid::Principal;
 
 // Candid file auto-generation
 candid::export_service!();

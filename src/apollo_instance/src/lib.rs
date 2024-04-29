@@ -29,6 +29,7 @@ pub type StringResult = std::result::Result<String, ApolloInstanceError>;
 
 use apollo_utils::apollo_instance::ApolloInstanceMetadata;
 use apollo_utils::apollo_instance::UpdateMetadata;
+use candid::Principal;
 
 candid::export_service!();
 
