@@ -2,12 +2,16 @@ use apollo_utils::{
     apollo_instance::{ApolloInstanceMetadata, UpdateMetadata},
     canister::validate_caller,
     errors::{ApolloError, ApolloInstanceError},
+    nat::ToNativeTypes,
     retry_until_success,
 };
 use candid::{candid_method, Nat, Principal};
 use ic_cdk::update;
 
-use crate::{types::custom_return_types::StringResult, ApolloInstanceMetadataResult, Result};
+use crate::{
+    types::{custom_return_types::StringResult, STATE},
+    ApolloInstanceMetadataResult, Result,
+};
 
 #[candid_method]
 #[update]
@@ -56,7 +60,7 @@ async fn update_apollo_instance_metadata(
     update_metadata_args: UpdateMetadata,
 ) -> Result<()> {
     validate_caller()?;
-    let apollo_instance = crate::get_apollo_instance!(chain_id);
+    let apollo_instance = crate::get_apollo_instance!(chain_id.clone());
 
     let (result,): (std::result::Result<(), ApolloInstanceError>,) =
         retry_until_success!(ic_cdk::call(
@@ -65,6 +69,18 @@ async fn update_apollo_instance_metadata(
             (update_metadata_args.clone(),)
         ))
         .map_err(|(_, msg)| ApolloError::CommunicationWithApolloInstanceFailed(msg))?;
+
+    // TODO: DELETE
+    STATE.with(|s| {
+        let mut state = s.borrow_mut();
+        let mut chain = state.chains.get(&chain_id.to_u32()).unwrap();
+
+        if let Some(apollo_coordinator) = update_metadata_args.apollo_coordinator {
+            chain.0.apollo_coordinator = apollo_coordinator;
+        }
+
+        state.chains.insert(chain_id.to_u32(), chain);
+    });
 
     Ok(result?)
 }
