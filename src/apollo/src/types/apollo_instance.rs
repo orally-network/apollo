@@ -6,6 +6,8 @@ pub struct ApolloInstance {
     pub canister_id: Principal,
     pub chain_id: Nat,
     #[serde(default)]
+    pub apollo_coordinator: String,
+    #[serde(default)]
     pub apollo_main_address: String,
     pub is_active: bool,
 }

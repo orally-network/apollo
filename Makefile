@@ -115,3 +115,22 @@ endif
 		})" --with-cycles 500000000000 --wallet $(shell dfx identity get-wallet) 
 
 
+
+local_apollo_add_apollo_instance_sepoila: local_upgrade_apollo
+
+
+	$(eval EVM_RPC_CANISTER := $(shell dfx canister id evm_rpc))
+
+	dfx canister call apollo add_apollo_instance \
+		"(record {\
+			apollos_fee = 0:nat; \
+			chain_id = 11155111:nat; \
+			chain_rpc = \"https://ethereum-sepolia-rpc.publicnode.com\"; \
+			apollo_coordinator = \"0x94B3792b41c78298DbE78D22078cCd2CC6415308\"; \
+			multicall_address = \"\"; \
+			timer_frequency_sec = 10:nat64; \
+			block_gas_limit = 1_000_000_000_000:nat; \
+			evm_rpc_canister = \"${EVM_RPC_CANISTER}\"; \
+			min_balance = 50_000_000_000_000_000:nat; \
+		})" --with-cycles 500000000000 --wallet $(shell dfx identity get-wallet) 
+

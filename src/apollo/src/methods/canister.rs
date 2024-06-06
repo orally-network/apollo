@@ -119,7 +119,7 @@ async fn add_apollo_instance(req: AddApolloInstanceRequest) -> Result<()> {
         apollos_fee: req.apollos_fee,
         key_name: get_metadata!(key_name),
         chain_rpc: req.chain_rpc,
-        apollo_coordinator: req.apollo_coordinator,
+        apollo_coordinator: req.apollo_coordinator.clone(),
         multicall_address: req.multicall_address,
         timer_frequency_sec: req.timer_frequency_sec,
         block_gas_limit: req.block_gas_limit,
@@ -153,6 +153,7 @@ async fn add_apollo_instance(req: AddApolloInstanceRequest) -> Result<()> {
                 let apollo_instance = ApolloInstance {
                     canister_id,
                     is_active: false,
+                    apollo_coordinator: req.apollo_coordinator,
                     apollo_main_address,
                     chain_id: chain_id.clone(),
                 };

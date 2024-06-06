@@ -19,6 +19,7 @@ type ApolloError = variant {
 };
 type ApolloInstance = record {
   apollo_main_address : text;
+  apollo_coordinator : text;
   canister_id : principal;
   chain_id : nat;
   is_active : bool;
