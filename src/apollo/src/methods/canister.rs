@@ -1,3 +1,4 @@
+use crate::methods::apollo_instance_canister::send_cycles;
 use crate::methods::INIT_CYCLES_BALANCE;
 use crate::types::apollo_instance::AddApolloInstanceRequest;
 use crate::types::UpdateMetadata;
@@ -20,6 +21,8 @@ use ic_cdk::api::management_canister::provisional::{CanisterIdRecord, CanisterSe
 use ic_cdk::{query, update};
 
 use crate::{GetApolloInstanceResult, Result};
+
+const SEND_CYCLES_COST: u64 = 100_000_000_000;
 
 #[candid_method]
 #[query]
@@ -88,6 +91,12 @@ fn add_apollo_instances_manually(apollo_instances: Vec<ApolloInstance>) -> Resul
 #[update]
 async fn add_apollo_instance(req: AddApolloInstanceRequest) -> Result<()> {
     validate_caller()?;
+
+    let available = ic_cdk::api::call::msg_cycles_available128();
+
+    if available < INIT_CYCLES_BALANCE {
+        return Err(ApolloError::NotEnoughCycles(available, INIT_CYCLES_BALANCE).into());
+    }
 
     log!(
         "Accepted {} cycles",
@@ -198,13 +207,39 @@ async fn add_apollo_instance(req: AddApolloInstanceRequest) -> Result<()> {
 
 #[candid_method]
 #[update]
-// TODO: where did cycles go ?
 async fn remove_apollo_instance(chain_id: Nat) -> Result<()> {
     validate_caller()?;
 
     log!("Removing Chain: {}", chain_id);
 
     let apollo_instance = crate::get_apollo_instance!(chain_id.clone());
+
+    let canister_cycles = match canister_status(CanisterIdRecord {
+        canister_id: apollo_instance.canister_id,
+    })
+    .await
+    {
+        Ok((status,)) => status.cycles,
+        Err((_, error)) => {
+            return Err(ApolloInstanceError::FailedToGetCanisterStatus(error.to_string()).into());
+        }
+    };
+
+    if canister_cycles >= SEND_CYCLES_COST {
+        log!("Canister cycles: {}", canister_cycles.clone());
+
+        send_cycles(
+            chain_id.clone(),
+            ic_cdk::api::id(),
+            canister_cycles.clone() - SEND_CYCLES_COST,
+        )
+        .await?;
+
+        log!(
+            "Returned {} cycles to the factory",
+            canister_cycles.clone() - SEND_CYCLES_COST
+        );
+    }
 
     match stop_canister(CanisterIdRecord {
         canister_id: apollo_instance.canister_id,

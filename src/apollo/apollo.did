@@ -16,6 +16,7 @@ type ApolloError = variant {
   ChainNotFound : nat;
   CommunicationWithApolloInstanceFailed : text;
   ChainAlreadyExists : nat;
+  NotEnoughCycles : record { nat; nat };
 };
 type ApolloInstance = record {
   apollo_main_address : text;
@@ -31,6 +32,7 @@ type ApolloInstanceError = variant {
   BalancesError : BalancesError;
   FailedToUpdateSettings : text;
   UtilsError : UtilsError;
+  FailedToGetCanisterStatus : text;
   Web3Error : Web3Error;
   FailedToInstallCode : text;
   ApolloCoordinatorPoolingError : text;

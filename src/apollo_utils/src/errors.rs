@@ -16,6 +16,8 @@ pub enum ApolloError {
     ApolloInstanceError(#[from] ApolloInstanceError),
     #[error("Utils error: {0}")]
     UtilsError(#[from] UtilsError),
+    #[error("Not enough cycles, required: {0}, available: {1}")]
+    NotEnoughCycles(u128, u128),
 }
 
 #[derive(Error, Debug, CandidType, Deserialize)]
@@ -48,6 +50,8 @@ pub enum ApolloInstanceError {
     ApolloCoordinatorPoolingError(String),
     #[error("Failed to restart timer: {0}")]
     FailedToRestartTimer(String),
+    #[error("Failed to get canister status: {0}")]
+    FailedToGetCanisterStatus(String),
 }
 
 #[derive(Error, Debug, CandidType, PartialEq, Deserialize)]

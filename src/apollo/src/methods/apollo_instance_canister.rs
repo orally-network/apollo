@@ -15,7 +15,7 @@ use crate::{
 
 #[candid_method]
 #[update]
-async fn send_cycles(chain_id: Nat, destination: Principal, amount: Nat) -> Result<()> {
+pub async fn send_cycles(chain_id: Nat, destination: Principal, amount: Nat) -> Result<()> {
     validate_caller()?;
     let apollo_instance = crate::get_apollo_instance!(chain_id);
 
