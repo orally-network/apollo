@@ -1,0 +1,33 @@
+
+
+dfx canister call apollo add_apollo_instance \
+		"(record {\
+			apollos_fee = 0:nat; \
+			chain_id = 167008:nat; \
+			chain_rpc = \"https://rpc.orally.network/?rpc=https://rpc.katla.taiko.xyz\"; \
+			apollo_coordinator = \"0x73e14D35f17B4F6cEbD2fF799D56ce59A1Ea34e9\"; \
+			multicall_address = \"0xF827209CB098bCB313d0FAC477B8314a84DAe817\"; \
+			timer_frequency_sec = 18000:nat64; \
+			block_gas_limit = 15_000_000:nat; \
+			evm_rpc_canister = \"7hfb6-caaaa-aaaar-qadga-cai\"; \
+			min_balance = 50_000_000_000_000_000:nat; \
+		})" --with-cycles 500000000000 --wallet vtmiz-ziaaa-aaaak-qibqq-cai --network ic
+
+
+dfx canister call apollo start_once "(11155111)" --ic
+dfx canister call apollo start_once "(48899)" --ic
+dfx canister call apollo start "(11155111)" --ic
+dfx canister call apollo stop "(11155111)" --ic
+dfx canister call apollo get_apollo_instance_metadata "(11155111)" --ic
+dfx canister call apollo stop "(167008)" --ic
+
+dfx canister call apollo update_timer_frequency_sec "(167008, 300)" --ic
+
+dfx canister call apollo deposit "(167008, \"0x7d3ea70502c2553a541f4bd0fc069a407b04bd045f7a0216d134844d24368c51\", opt \"0x599a074572327dE7F0B60Eb5037597c7FCb24166\", \"app.orally.network wants you to sign in with your Ethereum account:\n0x654DFF41D51c230FA400205A633101C5C1f1969C\n\nSign in with Ethereum to the pythia.\n\nURI: https://app.orally.network\nVersion: 1\nChain ID: 1313161554\nNonce: Aw0TfPVy4Pfcaa0NU\nIssued At: 2024-04-01T14:41:19.936Z\", \"2e592eab3ccfbd6a6c1183ff795a414fcb0ecdc934c92917d20244fe76892bde1abc66b5bf30bd1cefc532fda758634e3846c2d288b77768bca81f90a63491721c\")" --ic
+
+dfx canister call apollo update_metadata "(record { chain_id = opt 167008; chain_rpc = opt \"https://rpc.orally.network/?rpc=https://rpc.katla.taiko.xyz\" })" --ic
+
+dfx canister call apollo update_apollo_instance_metadata "(167008, record { apollo_coordinator = opt \"0x1FEa4E134c8BcDF6E1323C1Bf2Aa0899049CC754\" })" --ic
+
+dfx canister call apollo grant "(167008, \"0xf04673445D8e05B1b3E70af4903bb5fD5c703Db0\", \"app.orally.network wants you to sign in with your Ethereum account:\n0x654DFF41D51c230FA400205A633101C5C1f1969C\n\nSign in with Ethereum to the pythia.\n\nURI: https://app.orally.network\nVersion: 1\nChain ID: 1313161554\nNonce: Aw0TfPVy4Pfcaa0NU\nIssued At: 2024-04-01T14:41:19.936Z\", \"2e592eab3ccfbd6a6c1183ff795a414fcb0ecdc934c92917d20244fe76892bde1abc66b5bf30bd1cefc532fda758634e3846c2d288b77768bca81f90a63491721c\")" --ic
+dfx canister call apollo remove_apollo_instance "(167008)" --ic
